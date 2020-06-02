@@ -1,3 +1,4 @@
+from mysql.connector import MySQLConnection, Error
 from configparser import ConfigParser
 
 def read_db_config(filename='pihydropdata.ini', section='mysql'):
@@ -88,10 +89,11 @@ def query_with_fetchmany():
         cursor.close()
         conn.close()
 
-def insert_SensorDataRow(title, isbn):
-    query = "INSERT INTO books(title,isbn) " \
-            "VALUES(%s,%s)"
-    args = (title, isbn)
+#   Insert a single row
+def insert_SensorDataRow(sensor, location, dblvalue_raw, value2):
+    query = "INSERT INTO SensorData(sensor, location, dblvalue_raw, value2) " \
+            "VALUES(%s, %s, %d, %s)"
+    args = (sensor, location, dblvalue_raw, value2)
 
     try:
         db_config = read_db_config()
@@ -113,16 +115,22 @@ def insert_SensorDataRow(title, isbn):
         cursor.close()
         conn.close()
 
-def insert_SensorDataRows(books):
-    query = "INSERT INTO books(title,isbn) " \
-            "VALUES(%s,%s)"
+#   Insert multiple rows for all sensors
+def insert_SensorDataRows(rows):
+    query = "INSERT INTO SensorData(sensor, location, dblvalue_raw, value2) " \
+            "VALUES(%s, %s, %s, %s)"
 
     try:
+        print('Connecting to MySQL database:pihydropdata')        
         db_config = read_db_config()
         conn = MySQLConnection(**db_config)
-
+        if conn.is_connected():
+            print('Connection established.')
+        else:
+            print('Connection failed.')
+            
         cursor = conn.cursor()
-        cursor.executemany(query, books)
+        cursor.executemany(query, rows)
 
         conn.commit()
     except Error as e:
@@ -131,22 +139,23 @@ def insert_SensorDataRows(books):
     finally:
         cursor.close()
         conn.close()
+        print('Connection Closed.')
 
-def update_SensorDataRows(book_id, title):
+def update_SensorDataRows(id, sensor, location, dblvalue_raw, value2):
     # read database configuration
     db_config = read_db_config()
 
     # prepare query and data
-    query = """ UPDATE books
-                SET title = %s
+    query = """ UPDATE SensorData
+                SET location = %s
                 WHERE id = %s """
 
-    data = (title, book_id)
+    data = (location, id)
 
     try:
         conn = MySQLConnection(**db_config)
 
-        # update book title
+        # update location
         cursor = conn.cursor()
         cursor.execute(query, data)
 
