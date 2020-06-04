@@ -1,12 +1,7 @@
 <!--
-  Rui Santos
-  Complete project details at https://RandomNerdTutorials.com/cloud-weather-station-esp32-esp8266/
-
-  Permission is hereby granted, free of charge, to any person obtaining a copy
-  of this software and associated documentation files.
-
-  The above copyright notice and this permission notice shall be included in all
-  copies or substantial portions of the Software.
+ John Franklyn 06/03/2020 
+Read sensor data from closet sensors. Added logic to read
+ from right or left closet
 -->
 <?php
     include_once('pihydropdata-database.php');
@@ -21,24 +16,48 @@
     else {
       $readings_count = 20;
     }
-
-    $last_reading = getLastReadings();
-    $last_reading_temp = $last_reading["dblvalue_raw"];
-    $last_reading_humi = $last_reading["value2"];
+    $location = "right closet" // default
+    $sensor = "temperature" //default
+    $last_reading = getLastReadings($sensor, $location);
+    $last_reading_temp = getLastReadings("temperature", $location);
+    $last_reading_humi = getLastReadings("humidity", $location);
+    $last_reading_press = getLastReadings("pressure", $location);
+    $last_reading_ph = getLastReadings("ph", $location);
+    $last_reading_rpo = getLastReadings("rpo", $location);
+    $last_reading_ec = getLastReadings("ec", $location);
+//    $last_reading_temp = $last_reading["dblvalue_raw"];
+//    $last_reading_humi = $last_reading["value2"];
     $last_reading_time = $last_reading["reading_time"];
 
     // Uncomment to set timezone to - 1 hour (you can change 1 to any number)
     //$last_reading_time = date("Y-m-d H:i:s", strtotime("$last_reading_time - 1 hours"));
     // Uncomment to set timezone to + 7 hours (you can change 7 to any number)
-    $last_reading_time = date("Y-m-d H:i:s", strtotime("$last_reading_time + 7 hours"));
+    $last_reading_time = date("m-d-Y H:i:s", strtotime("$last_reading_time + 7 hours"));
 
-    $min_temp = minReading($readings_count, 'dblvalue_raw');
-    $max_temp = maxReading($readings_count, 'dblvalue_raw');
-    $avg_temp = avgReading($readings_count, 'dblvalue_raw');
+    $min_temp = minReading($readings_count, 'dblvalue_raw', "temperature", $location);
+    $max_temp = maxReading($readings_count, 'dblvalue_raw', "temperature", $location);
+    $avg_temp = avgReading($readings_count, 'dblvalue_raw', "temperature", $location);
 
-    $min_humi = minReading($readings_count, 'value2');
-    $max_humi = maxReading($readings_count, 'value2');
-    $avg_humi = avgReading($readings_count, 'value2');
+    $min_humi = minReading($readings_count, 'dblvalue_raw', "humidity", $location);
+    $max_humi = maxReading($readings_count, 'dblvalue_raw', "humidity", $location);
+    $avg_humi = avgReading($readings_count, 'dblvalue_raw', "humidity", $location);
+
+    $min_press = minReading($readings_count, 'dblvalue_raw', "pressure", $location);
+    $max_press = maxReading($readings_count, 'dblvalue_raw', "pressure", $location);
+    $avg_press = avgReading($readings_count, 'dblvalue_raw', "pressure", $location);
+
+    $min_ph = minReading($readings_count, 'dblvalue_raw', "ph", $location);
+    $max_ph = maxReading($readings_count, 'dblvalue_raw', "ph", $location);
+    $avg_ph = avgReading($readings_count, 'dblvalue_raw', "ph", $location);
+
+    $min_rpo = minReading($readings_count, 'dblvalue_raw', "rpo", $location);
+    $max_rpo = maxReading($readings_count, 'dblvalue_raw', "rpo", $location);
+    $avg_rpo = avgReading($readings_count, 'dblvalue_raw', "rpo", $location);
+
+    $min_ec = minReading($readings_count, 'dblvalue_raw', "ec", $location);
+    $max_ec = maxReading($readings_count, 'dblvalue_raw', "ec", $location);
+    $avg_ec = avgReading($readings_count, 'dblvalue_raw', "ec", $location);
+
 ?>
 
 <!DOCTYPE html>
@@ -50,7 +69,7 @@
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
     </head>
     <header class="header">
-        <h1>📊 Hydro Ponic Monitoring Station</h1>
+        <h1>Hydroponic Monitoring Station</h1>
         <form method="get">
             <input type="number" name="readingsCount" min="1" placeholder="Number of readings (<?php echo $readings_count; ?>)">
             <input type="submit" value="UPDATE">

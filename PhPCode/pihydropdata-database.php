@@ -12,11 +12,11 @@
   $servername = "localhost";
 
   // REPLACE with your Database name
-  $dbname = "YOURDATABASE";
+  $dbname = "pihydropdata";
   // REPLACE with Database user
-  $username = "YOURUSER";
+  $username = "pihydrop-user";
   // REPLACE with Database user password
-  $password = "YOURPASSWORD";
+  $password = "Jaf_10205!";
 
   function insertReading($sensor, $location, $dblvalue_raw, $value2) {
     global $servername, $username, $password, $dbname;
@@ -50,7 +50,7 @@
       die("Connection failed: " . $conn->connect_error);
     }
 
-    $sql = "SELECT id, sensor, location, dblvalue_raw, value2, reading_time FROM SensorData order by reading_time desc limit " . $limit;
+    $sql = "SELECT id, sensor, location, round(dblvalue_raw, 2), value2, reading_time FROM SensorData WHERE location = " . $location. " order by reading_time desc limit " . $limit;
     if ($result = $conn->query($sql)) {
       return $result;
     }
@@ -59,7 +59,7 @@
     }
     $conn->close();
   }
-  function getLastReadings() {
+  function getLastReadings($sensor, $location) {
     global $servername, $username, $password, $dbname;
 
     // Create connection
@@ -69,7 +69,11 @@
       die("Connection failed: " . $conn->connect_error);
     }
 
-    $sql = "SELECT id, sensor, location, dblvalue_raw, value2, reading_time FROM SensorData order by reading_time desc limit 1" ;
+    $sql = "SELECT id, sensor, location, round(dblvalue_raw, 2), value2, reading_time 
+		FROM SensorData 
+		WHERE location = " . $location. " 
+		AND sensor = " . $sensor. "
+		order by reading_time desc limit 1" ;
     if ($result = $conn->query($sql)) {
       return $result->fetch_assoc();
     }
@@ -79,7 +83,7 @@
     $conn->close();
   }
 
-  function minReading($limit, $value) {
+  function minReading($limit, $value, $sensor, $location) {
      global $servername, $username, $password, $dbname;
 
     // Create connection
@@ -89,7 +93,12 @@
       die("Connection failed: " . $conn->connect_error);
     }
 
-    $sql = "SELECT MIN(" . $dblvalue_raw . ") AS min_amount FROM (SELECT " . $dblvalue_raw . " FROM SensorData order by reading_time desc limit " . $limit . ") AS min";
+    $sql = "SELECT MIN(" . $dblvalue_raw . ") 
+		AS min_amount FROM (SELECT " . $dblvalue_raw . " 
+		FROM SensorData 
+		WHERE location = " . $location. " 
+		AND sensor = " . $sensor. "
+		order by reading_time desc limit " . $limit . ") AS min";
     if ($result = $conn->query($sql)) {
       return $result->fetch_assoc();
     }
@@ -99,7 +108,7 @@
     $conn->close();
   }
 
-  function maxReading($limit, $value) {
+  function maxReading($limit, $value, $sensor, $location) {
      global $servername, $username, $password, $dbname;
 
     // Create connection
@@ -109,7 +118,12 @@
       die("Connection failed: " . $conn->connect_error);
     }
 
-    $sql = "SELECT MAX(" . $dblvalue_raw . ") AS max_amount FROM (SELECT " . $dblvalue_raw . " FROM SensorData order by reading_time desc limit " . $limit . ") AS max";
+    $sql = "SELECT MAX(" . $dblvalue_raw . ") 
+		AS max_amount FROM (SELECT " . $dblvalue_raw . " 
+		FROM SensorData WHERE location = " . $location. " 
+		WHERE location = " . $location. " 
+		AND sensor = " . $sensor. "
+		order by reading_time desc limit " . $limit . ") AS max";
     if ($result = $conn->query($sql)) {
       return $result->fetch_assoc();
     }
@@ -119,7 +133,7 @@
     $conn->close();
   }
 
-  function avgReading($limit, $value) {
+  function avgReading($limit, $value, $sensor, $location) {
      global $servername, $username, $password, $dbname;
 
     // Create connection
@@ -129,7 +143,12 @@
       die("Connection failed: " . $conn->connect_error);
     }
 
-    $sql = "SELECT AVG(" . $dblvalue_raw . ") AS avg_amount FROM (SELECT " . $dblvalue_raw . " FROM SensorData order by reading_time desc limit " . $limit . ") AS avg";
+    $sql = "SELECT AVG(" . $dblvalue_raw . ") 
+		AS avg_amount FROM (SELECT " . $dblvalue_raw . " 
+		FROM SensorData WHERE location = " . $location. " 
+		WHERE location = " . $location. " 
+		AND sensor = " . $sensor. "
+		order by reading_time desc limit " . $limit . ") AS avg";
     if ($result = $conn->query($sql)) {
       return $result->fetch_assoc();
     }
