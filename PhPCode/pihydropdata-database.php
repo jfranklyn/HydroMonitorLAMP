@@ -1,5 +1,12 @@
 <!--
-John Franklyn 06/06/20
+  Rui Santos
+  Complete project details at https://RandomNerdTutorials.com/cloud-weather-station-esp32-esp8266/
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files.
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
 -->
 <?php
   $servername = "localhost";
@@ -43,7 +50,7 @@ John Franklyn 06/06/20
       die("Connection failed: " . $conn->connect_error);
     }
 
-    $sql = "SELECT id, sensor, location, round(dblvalue_raw, 2), value2, reading_time FROM SensorData WHERE location = " . $location. " order by reading_time desc limit " . $limit;
+    $sql = "SELECT id, sensor, location, dblvalueraw, value2, reading_time FROM SensorData order by reading_time desc limit " . $limit;
     if ($result = $conn->query($sql)) {
       return $result;
     }
@@ -62,11 +69,7 @@ John Franklyn 06/06/20
       die("Connection failed: " . $conn->connect_error);
     }
 
-    $sql = "SELECT id, sensor, location, round(dblvalue_raw, 2), value2, reading_time 
-		FROM SensorData 
-		WHERE location = " . $location. " 
-		AND sensor = " . $sensor. "
-		order by reading_time desc limit 1" ;
+    $sql = "SELECT id, sensor, location, dblvalueraw, value2, reading_time FROM SensorData WHERE sensor=" . $sensor . " AND location=" . $location . " order by reading_time desc limit 1" ;
     if ($result = $conn->query($sql)) {
       return $result->fetch_assoc();
     }
@@ -86,12 +89,8 @@ John Franklyn 06/06/20
       die("Connection failed: " . $conn->connect_error);
     }
 
-    $sql = "SELECT MIN(" . $dblvalue_raw . ") 
-		AS min_amount FROM (SELECT " . $dblvalue_raw . " 
-		FROM SensorData 
-		WHERE location = " . $location. " 
-		AND sensor = " . $sensor. "
-		order by reading_time desc limit " . $limit . ") AS min";
+    $sql = "SELECT MIN(" . $value . ") AS min_amount FROM (SELECT " . $value . " FROM SensorData WHERE sensor=" . $sensor . " AND location=" . $location . " order by reading_time desc limit " . $limit . ") AS min";
+     
     if ($result = $conn->query($sql)) {
       return $result->fetch_assoc();
     }
@@ -111,12 +110,7 @@ John Franklyn 06/06/20
       die("Connection failed: " . $conn->connect_error);
     }
 
-    $sql = "SELECT MAX(" . $dblvalue_raw . ") 
-		AS max_amount FROM (SELECT " . $dblvalue_raw . " 
-		FROM SensorData WHERE location = " . $location. " 
-		WHERE location = " . $location. " 
-		AND sensor = " . $sensor. "
-		order by reading_time desc limit " . $limit . ") AS max";
+    $sql = "SELECT MAX(" . $value . ") AS max_amount FROM (SELECT " . $value . " FROM SensorData WHERE sensor=" . $sensor . " AND location=" . $location . " order by reading_time desc limit " . $limit . ") AS max";
     if ($result = $conn->query($sql)) {
       return $result->fetch_assoc();
     }
@@ -136,12 +130,7 @@ John Franklyn 06/06/20
       die("Connection failed: " . $conn->connect_error);
     }
 
-    $sql = "SELECT AVG(" . $dblvalue_raw . ") 
-		AS avg_amount FROM (SELECT " . $dblvalue_raw . " 
-		FROM SensorData WHERE location = " . $location. " 
-		WHERE location = " . $location. " 
-		AND sensor = " . $sensor. "
-		order by reading_time desc limit " . $limit . ") AS avg";
+    $sql = "SELECT AVG(" . $value . ") AS avg_amount FROM (SELECT " . $value . " FROM SensorData WHERE sensor=" . $sensor . " AND location=" . $location . " order by reading_time desc limit " . $limit . ") AS avg";
     if ($result = $conn->query($sql)) {
       return $result->fetch_assoc();
     }

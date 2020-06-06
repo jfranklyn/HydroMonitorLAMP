@@ -16,8 +16,8 @@ Read sensor data from closet sensors. Added logic to read
     else {
       $readings_count = 20;
     }
-    $location = "right closet" // default
-    $sensor = "temperature" //default
+    $location = "right closet"; // default
+    $sensor = "temperature";//default
     $last_reading = getLastReadings($sensor, $location);
     $last_reading_temp = getLastReadings("temperature", $location);
     $last_reading_humi = getLastReadings("humidity", $location);
@@ -34,29 +34,29 @@ Read sensor data from closet sensors. Added logic to read
     // Uncomment to set timezone to + 7 hours (you can change 7 to any number)
     $last_reading_time = date("m-d-Y H:i:s", strtotime("$last_reading_time + 7 hours"));
 
-    $min_temp = minReading($readings_count, 'dblvalue_raw', "temperature", $location);
-    $max_temp = maxReading($readings_count, 'dblvalue_raw', "temperature", $location);
-    $avg_temp = avgReading($readings_count, 'dblvalue_raw', "temperature", $location);
+    $min_temp = minReading($readings_count, 'dblvalueraw', 'temperature', $location);
+    $max_temp = maxReading($readings_count, 'value2', 'temperature', $location);
+    $avg_temp = avgReading($readings_count, 'value2', 'temperature', $location);
 
-    $min_humi = minReading($readings_count, 'dblvalue_raw', "humidity", $location);
-    $max_humi = maxReading($readings_count, 'dblvalue_raw', "humidity", $location);
-    $avg_humi = avgReading($readings_count, 'dblvalue_raw', "humidity", $location);
+    $min_humi = minReading($readings_count, 'dblvalueraw', "humidity", $location);
+    $max_humi = maxReading($readings_count, 'dblvalueraw', "humidity", $location);
+    $avg_humi = avgReading($readings_count, 'dblvalueraw', "humidity", $location);
 
-    $min_press = minReading($readings_count, 'dblvalue_raw', "pressure", $location);
-    $max_press = maxReading($readings_count, 'dblvalue_raw', "pressure", $location);
-    $avg_press = avgReading($readings_count, 'dblvalue_raw', "pressure", $location);
+    $min_press = minReading($readings_count, 'dblvalueraw', "pressure", $location);
+    $max_press = maxReading($readings_count, 'dblvalueraw', "pressure", $location);
+    $avg_press = avgReading($readings_count, 'dblvalueraw', "pressure", $location);
 
-    $min_ph = minReading($readings_count, 'dblvalue_raw', "ph", $location);
-    $max_ph = maxReading($readings_count, 'dblvalue_raw', "ph", $location);
-    $avg_ph = avgReading($readings_count, 'dblvalue_raw', "ph", $location);
+    $min_ph = minReading($readings_count, 'dblvalueraw', "ph", $location);
+    $max_ph = maxReading($readings_count, 'dblvalueraw', "ph", $location);
+    $avg_ph = avgReading($readings_count, 'dblvalueraw', "ph", $location);
 
-    $min_rpo = minReading($readings_count, 'dblvalue_raw', "rpo", $location);
-    $max_rpo = maxReading($readings_count, 'dblvalue_raw', "rpo", $location);
-    $avg_rpo = avgReading($readings_count, 'dblvalue_raw', "rpo", $location);
+    $min_rpo = minReading($readings_count, 'dblvalueraw', "rpo", $location);
+    $max_rpo = maxReading($readings_count, 'dblvalueraw', "rpo", $location);
+    $avg_rpo = avgReading($readings_count, 'dblvalueraw', "rpo", $location);
 
-    $min_ec = minReading($readings_count, 'dblvalue_raw', "ec", $location);
-    $max_ec = maxReading($readings_count, 'dblvalue_raw', "ec", $location);
-    $avg_ec = avgReading($readings_count, 'dblvalue_raw', "ec", $location);
+    $min_ec = minReading($readings_count, 'dblvalueraw', "ec", $location);
+    $max_ec = maxReading($readings_count, 'dblvalueraw', "ec", $location);
+    $avg_ec = avgReading($readings_count, 'dblvalueraw', "ec", $location);
 
 ?>
 
@@ -143,7 +143,7 @@ Read sensor data from closet sensors. Added logic to read
             $row_id = $row["id"];
             $row_sensor = $row["sensor"];
             $row_location = $row["location"];
-            $row_value1 = $row["dblvalue_raw"];
+            $row_value1 = $row["dblvalueraw"];
             $row_value2 = $row["value2"];
             $row_reading_time = $row["reading_time"];
             // Uncomment to set timezone to - 1 hour (you can change 1 to any number)
