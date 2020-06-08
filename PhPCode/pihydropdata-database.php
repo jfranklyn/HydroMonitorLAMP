@@ -53,7 +53,8 @@
     }
     $conn->close();
   }
-  function getLastReadings($value, $sensor, $location) {
+  function getLastReadings($sensor, $location) {
+  //function getLastReadings() {      
     global $servername, $username, $password, $dbname;
 
     // Create connection
@@ -63,7 +64,10 @@
       die("Connection failed: " . $conn->connect_error);
     }
 
-    $sql = "SELECT id, sensor, location, dblvalueraw, value2, reading_time FROM SensorData WHERE sensor=" . $sensor . " AND location=" . $location . " order by reading_time desc limit 1" ;
+    $sql = "SELECT id, sensor, location, dblvalueraw, value2, reading_time FROM SensorData WHERE sensor='" . $sensor . "' AND location='" . $location . "' order by reading_time desc limit 1;" ;
+//    $sql = "SELECT id, sensor, location, dblvalueraw, value2, reading_time FROM SensorData order by reading_time desc limit 1;" ;
+    
+        //echo "sql = $sql <br>";
     if ($result = $conn->query($sql)) {
       return $result->fetch_assoc();
     }

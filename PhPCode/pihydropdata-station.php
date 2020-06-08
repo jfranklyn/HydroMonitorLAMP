@@ -16,18 +16,36 @@ Read sensor data from closet sensors. Added logic to read
     else {
       $readings_count = 20;
     }
-    $location = "";
-    //$last_reading = getLastReadings($value, $sensor,$location);
-    $last_reading_temp = getLastReadings("dblvalueraw","temperature", $location);
-    //echo "$last_reading_temp <br>";
-    $last_reading_humi = getLastReadings("dblvalueraw","humidity", "right closet");
-    $last_reading_press = getLastReadings("dblvalueraw","pressure", "right closet");
-    $last_reading_ph = getLastReadings("dblvalueraw","ph", "right closet");
-    $last_reading_rpo = getLastReadings("dblvalueraw","rpo", "right closet");
-    $last_reading_ec = getLastReadings("dblvalueraw","ec", "right closet");
-//    $last_reading_temp = $last_reading["dblvalue_raw"];
-//    $last_reading_humi = $last_reading["value2"];
-    $last_reading_time = getLastReadings("reading_time","","","");
+//  get the readings for each sensor and one location    
+    $location = 'right closet';
+    $sensor = 'temperature';
+
+    $last_reading = getLastReadings($sensor,$location);
+    $last_reading_temp = round($last_reading["dblvalueraw"], 2);
+    echo "last reading temp = $last_reading_temp <br>";
+
+    $sensor = 'humidity';
+    $last_reading = getLastReadings($sensor,$location);
+    $last_reading_humi = round($last_reading["dblvalueraw"], 2);
+    echo "last reading humidity = $last_reading_humi<br>";
+    
+    $sensor = 'pressure';
+    $last_reading = getLastReadings($sensor,$location);
+    $last_reading_humi = $last_reading["dblvalueraw"];
+
+    $sensor = 'ph';
+    $last_reading = getLastReadings($sensor,$location);
+    $last_reading_humi = $last_reading["dblvalueraw"];
+
+    $sensor = 'rpo';
+    $last_reading = getLastReadings($sensor,$location);
+    $last_reading_humi = $last_reading["dblvalueraw"];
+
+    $sensor = 'ec';
+    $last_reading = getLastReadings($sensor,$location);
+    $last_reading_humi = $last_reading["dblvalueraw"];    
+
+    $last_reading_time = getLastReadings("reading_time","","",$location);
 
     // Uncomment to set timezone to - 1 hour (you can change 1 to any number)
     //$last_reading_time = date("Y-m-d H:i:s", strtotime("$last_reading_time - 1 hours"));
@@ -176,7 +194,7 @@ Read sensor data from closet sensors. Added logic to read
     function setTemperature(curVal){
     	//set range for Temperature in Celsius -5 Celsius to 38 Celsius
     	var minTemp = 20.0;
-    	var maxTemp = 40.0;
+    	var maxTemp = 60.0;
         //set range for Temperature in Fahrenheit 23 Fahrenheit to 100 Fahrenheit
     	//var minTemp = 23;
     	//var maxTemp = 100;
