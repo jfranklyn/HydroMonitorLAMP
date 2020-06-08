@@ -1,12 +1,6 @@
 <!--
-  Rui Santos
-  Complete project details at https://RandomNerdTutorials.com/cloud-weather-station-esp32-esp8266/
-
-  Permission is hereby granted, free of charge, to any person obtaining a copy
-  of this software and associated documentation files.
-
-  The above copyright notice and this permission notice shall be included in all
-  copies or substantial portions of the Software.
+  John Franklyn 06/07/20
+  Database functions modified added WHERE clauses to search for specific sensors and locations.
 -->
 <?php
   $servername = "localhost";
@@ -59,7 +53,7 @@
     }
     $conn->close();
   }
-  function getLastReadings($sensor, $location) {
+  function getLastReadings($value, $sensor, $location) {
     global $servername, $username, $password, $dbname;
 
     // Create connection

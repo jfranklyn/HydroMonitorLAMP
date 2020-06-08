@@ -16,18 +16,18 @@ Read sensor data from closet sensors. Added logic to read
     else {
       $readings_count = 20;
     }
-    $location = "right closet"; // default
-    $sensor = "temperature";//default
-    $last_reading = getLastReadings($sensor, $location);
-    $last_reading_temp = getLastReadings("temperature", $location);
-    $last_reading_humi = getLastReadings("humidity", $location);
-    $last_reading_press = getLastReadings("pressure", $location);
-    $last_reading_ph = getLastReadings("ph", $location);
-    $last_reading_rpo = getLastReadings("rpo", $location);
-    $last_reading_ec = getLastReadings("ec", $location);
+    $location = "";
+    //$last_reading = getLastReadings($value, $sensor,$location);
+    $last_reading_temp = getLastReadings("dblvalueraw","temperature", $location);
+    //echo "$last_reading_temp <br>";
+    $last_reading_humi = getLastReadings("dblvalueraw","humidity", "right closet");
+    $last_reading_press = getLastReadings("dblvalueraw","pressure", "right closet");
+    $last_reading_ph = getLastReadings("dblvalueraw","ph", "right closet");
+    $last_reading_rpo = getLastReadings("dblvalueraw","rpo", "right closet");
+    $last_reading_ec = getLastReadings("dblvalueraw","ec", "right closet");
 //    $last_reading_temp = $last_reading["dblvalue_raw"];
 //    $last_reading_humi = $last_reading["value2"];
-    $last_reading_time = $last_reading["reading_time"];
+    $last_reading_time = getLastReadings("reading_time","","","");
 
     // Uncomment to set timezone to - 1 hour (you can change 1 to any number)
     //$last_reading_time = date("Y-m-d H:i:s", strtotime("$last_reading_time - 1 hours"));
@@ -153,6 +153,7 @@ Read sensor data from closet sensors. Added logic to read
 
             echo '<tr>
                     <td>' . $row_id . '</td>
+
                     <td>' . $row_sensor . '</td>
                     <td>' . $row_location . '</td>
                     <td>' . $row_value1 . '</td>
@@ -166,15 +167,16 @@ Read sensor data from closet sensors. Added logic to read
 ?>
 
 <script>
-    var value1 = <?php echo $last_reading_temp; ?>;
-    var value2 = <?php echo $last_reading_humi; ?>;
-    setTemperature(value1);
-    setHumidity(value2);
+    var valuetemp = <?php echo $last_reading_temp; ?>;
+    var valuehumi = <?php echo $last_reading_humi; ?>;
+
+    setTemperature(valuetemp);
+    setHumidity(valuehumi);
 
     function setTemperature(curVal){
     	//set range for Temperature in Celsius -5 Celsius to 38 Celsius
     	var minTemp = 20.0;
-    	var maxTemp = 27.0;
+    	var maxTemp = 40.0;
         //set range for Temperature in Fahrenheit 23 Fahrenheit to 100 Fahrenheit
     	//var minTemp = 23;
     	//var maxTemp = 100;
