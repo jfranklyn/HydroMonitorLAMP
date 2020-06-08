@@ -87,8 +87,8 @@
       die("Connection failed: " . $conn->connect_error);
     }
 
-    $sql = "SELECT MIN(" . $value . ") AS min_amount FROM (SELECT " . $value . " FROM SensorData WHERE sensor=" . $sensor . " AND location=" . $location . " order by reading_time desc limit " . $limit . ") AS min";
-     
+    $sql = "SELECT MIN(" . $value . ") AS min_amount FROM (SELECT " . $value . " FROM SensorData WHERE sensor='" . $sensor . "' AND location='" . $location . "' order by reading_time desc limit " . $limit . ") AS min;";
+
     if ($result = $conn->query($sql)) {
       return $result->fetch_assoc();
     }
@@ -108,7 +108,8 @@
       die("Connection failed: " . $conn->connect_error);
     }
 
-    $sql = "SELECT MAX(" . $value . ") AS max_amount FROM (SELECT " . $value . " FROM SensorData WHERE sensor=" . $sensor . " AND location=" . $location . " order by reading_time desc limit " . $limit . ") AS max";
+    $sql = "SELECT MAX(" . $value . ") AS max_amount FROM (SELECT " . $value . " FROM SensorData WHERE sensor='" . $sensor . "' AND location='" . $location . "' order by reading_time desc limit " . $limit . ") AS max";
+             //echo "sql = $sql <br>";     
     if ($result = $conn->query($sql)) {
       return $result->fetch_assoc();
     }
@@ -128,7 +129,7 @@
       die("Connection failed: " . $conn->connect_error);
     }
 
-    $sql = "SELECT AVG(" . $value . ") AS avg_amount FROM (SELECT " . $value . " FROM SensorData WHERE sensor=" . $sensor . " AND location=" . $location . " order by reading_time desc limit " . $limit . ") AS avg";
+    $sql = "SELECT AVG(" . $value . ") AS avg_amount FROM (SELECT " . $value . " FROM SensorData WHERE sensor='" . $sensor . "' AND location='" . $location . "' order by reading_time desc limit " . $limit . ") AS avg";
     if ($result = $conn->query($sql)) {
       return $result->fetch_assoc();
     }

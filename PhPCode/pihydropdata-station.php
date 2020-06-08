@@ -31,19 +31,19 @@ Read sensor data from closet sensors. Added logic to read
     
     $sensor = 'pressure';
     $last_reading = getLastReadings($sensor,$location);
-    $last_reading_humi = $last_reading["dblvalueraw"];
+    $last_reading_press = $last_reading["dblvalueraw"];
 
     $sensor = 'ph';
     $last_reading = getLastReadings($sensor,$location);
-    $last_reading_humi = $last_reading["dblvalueraw"];
+    $last_reading_ph = $last_reading["dblvalueraw"];
 
     $sensor = 'rpo';
     $last_reading = getLastReadings($sensor,$location);
-    $last_reading_humi = $last_reading["dblvalueraw"];
+    $last_reading_rpo = $last_reading["dblvalueraw"];
 
     $sensor = 'ec';
     $last_reading = getLastReadings($sensor,$location);
-    $last_reading_humi = $last_reading["dblvalueraw"];    
+    $last_reading_ec = $last_reading["dblvalueraw"];    
 
     $last_reading_time = getLastReadings("reading_time","","",$location);
 
@@ -52,29 +52,36 @@ Read sensor data from closet sensors. Added logic to read
     // Uncomment to set timezone to + 7 hours (you can change 7 to any number)
     $last_reading_time = date("m-d-Y H:i:s", strtotime("$last_reading_time + 7 hours"));
 
-    $min_temp = minReading($readings_count, 'dblvalueraw', 'temperature', $location);
-    $max_temp = maxReading($readings_count, 'value2', 'temperature', $location);
-    $avg_temp = avgReading($readings_count, 'value2', 'temperature', $location);
+//  calculate min, max, average values based on rowcount
+    $sensor = 'temperature';
+    $min_temp = minReading($readings_count, 'dblvalueraw', $sensor, $location);
+    $max_temp = maxReading($readings_count, 'dblvalueraw', $sensor, $location);
+    $avg_temp = avgReading($readings_count, 'dblvalueraw', $sensor, $location);
 
-    $min_humi = minReading($readings_count, 'dblvalueraw', "humidity", $location);
-    $max_humi = maxReading($readings_count, 'dblvalueraw', "humidity", $location);
-    $avg_humi = avgReading($readings_count, 'dblvalueraw', "humidity", $location);
+    $sensor = 'humidity';
+    $min_humi = minReading($readings_count, 'dblvalueraw', $sensor, $location);
+    $max_humi = maxReading($readings_count, 'dblvalueraw', $sensor, $location);
+    $avg_humi = avgReading($readings_count, 'dblvalueraw', $sensor, $location);
 
-    $min_press = minReading($readings_count, 'dblvalueraw', "pressure", $location);
-    $max_press = maxReading($readings_count, 'dblvalueraw', "pressure", $location);
-    $avg_press = avgReading($readings_count, 'dblvalueraw', "pressure", $location);
+    $sensor = 'pressure';
+    $min_press = minReading($readings_count, 'dblvalueraw', $sensor, $location);
+    $max_press = maxReading($readings_count, 'dblvalueraw',$sensor, $location);
+    $avg_press = avgReading($readings_count, 'dblvalueraw', $sensor,  $location);
 
-    $min_ph = minReading($readings_count, 'dblvalueraw', "ph", $location);
-    $max_ph = maxReading($readings_count, 'dblvalueraw', "ph", $location);
-    $avg_ph = avgReading($readings_count, 'dblvalueraw', "ph", $location);
+    $sensor = 'ph';
+    $min_ph = minReading($readings_count, 'dblvalueraw', $sensor, $location);
+    $max_ph = maxReading($readings_count, 'dblvalueraw', $sensor, $location);
+    $avg_ph = avgReading($readings_count, 'dblvalueraw', $sensor, $location);
 
-    $min_rpo = minReading($readings_count, 'dblvalueraw', "rpo", $location);
-    $max_rpo = maxReading($readings_count, 'dblvalueraw', "rpo", $location);
-    $avg_rpo = avgReading($readings_count, 'dblvalueraw', "rpo", $location);
+    $sensor = 'rpo';
+    $min_rpo = minReading($readings_count, 'dblvalueraw', $sensor, $location);
+    $max_rpo = maxReading($readings_count, 'dblvalueraw', $sensor, $location);
+    $avg_rpo = avgReading($readings_count, 'dblvalueraw', $sensor, $location);
 
-    $min_ec = minReading($readings_count, 'dblvalueraw', "ec", $location);
-    $max_ec = maxReading($readings_count, 'dblvalueraw', "ec", $location);
-    $avg_ec = avgReading($readings_count, 'dblvalueraw', "ec", $location);
+    $sensor = 'ec';
+    $min_ec = minReading($readings_count, 'dblvalueraw', $sensor, $location);
+    $max_ec = maxReading($readings_count, 'dblvalueraw', $sensor, $location);
+    $avg_ec = avgReading($readings_count, 'dblvalueraw', $sensor, $location);
 
 ?>
 
@@ -96,26 +103,35 @@ Read sensor data from closet sensors. Added logic to read
 <body>
     <p>Last reading: <?php echo $last_reading_time; ?></p>
     <section class="content">
-	    <div class="box gauge--1">
-	    <h3>TEMPERATURE</h3>
+        <div class="box gauge--1">
+            <h3>TEMPERATURE</h3>
               <div class="mask">
-			  <div class="semi-circle"></div>
-			  <div class="semi-circle--mask"></div>
-			</div>
-		    <p style="font-size: 30px;" id="temp">--</p>
-		    <table cellspacing="5" cellpadding="5">
-		        <tr>
-		            <th colspan="3">Temperature <?php echo $readings_count; ?> readings</th>
-	            </tr>
-		        <tr>
-		            <td>Min</td>
-                    <td>Max</td>
-                    <td>Average</td>
-                </tr>
+               <div class="semi-circle"></div>
+               <div class="semi-circle--mask"></div>
+            </div>
+            <p style="font-size: 30px;" id="temp">--</p>
+           <table cellspacing="5" cellpadding="5">
                 <tr>
-                    <td><?php echo $min_temp['min_amount']; ?> &deg;C</td>
-                    <td><?php echo $max_temp['max_amount']; ?> &deg;C</td>
+                    <th colspan="3">Average for the last <?php echo $readings_count; ?> readings</th>
+               </tr>
+                 <tr>
+                    <p>
+                    <th>Temperature</th>
+                    <th>Humidity</th>
+                    <th>Pressure</th>
+                    <th>Ph</th>
+                    <th>RPO</th>
+                    <th>EC</th>
+                    </p>
+                 </tr>
+
+                <tr>
                     <td><?php echo round($avg_temp['avg_amount'], 2); ?> &deg;C</td>
+                    <td><?php echo round($avg_humi['avg_amount'], 2); ?> RH</td>
+                    <td><?php echo round($avg_press['avg_amount'], 2); ?> Hg</td>
+                    <td><?php echo round($avg_ph['avg_amount'],2); ?> %</td>
+                    <td><?php echo round($avg_rpo['avg_amount'], 2); ?> %</td>
+                    <td><?php echo round($avg_ec['avg_amount'], 2); ?> %</td>                    
                 </tr>
             </table>
         </div>
@@ -136,8 +152,8 @@ Read sensor data from closet sensors. Added logic to read
                     <td>Average</td>
                 </tr>
                 <tr>
-                    <td><?php echo $min_humi['min_amount']; ?> %</td>
-                    <td><?php echo $max_humi['max_amount']; ?> %</td>
+                    <td><?php echo round($min_humi['min_amount'],2); ?> %</td>
+                    <td><?php echo round($max_humi['max_amount'], 2); ?> %</td>
                     <td><?php echo round($avg_humi['avg_amount'], 2); ?> %</td>
                 </tr>
             </table>
@@ -158,7 +174,6 @@ Read sensor data from closet sensors. Added logic to read
     $result = getAllReadings($readings_count);
         if ($result) {
         while ($row = $result->fetch_assoc()) {
-            $row_id = $row["id"];
             $row_sensor = $row["sensor"];
             $row_location = $row["location"];
             $row_value1 = $row["dblvalueraw"];
@@ -170,9 +185,7 @@ Read sensor data from closet sensors. Added logic to read
             $row_reading_time = date("Y-m-d H:i:s", strtotime("$row_reading_time + 7 hours"));
 
             echo '<tr>
-                    <td>' . $row_id . '</td>
-
-                    <td>' . $row_sensor . '</td>
+                     <td>' . $row_sensor . '</td>
                     <td>' . $row_location . '</td>
                     <td>' . $row_value1 . '</td>
                     <td>' . $row_value2 . '</td>
@@ -187,25 +200,27 @@ Read sensor data from closet sensors. Added logic to read
 <script>
     var valuetemp = <?php echo $last_reading_temp; ?>;
     var valuehumi = <?php echo $last_reading_humi; ?>;
-
+    //alert (valuehumi);
+    //showMessage();
     setTemperature(valuetemp);
     setHumidity(valuehumi);
 
     function setTemperature(curVal){
-    	//set range for Temperature in Celsius -5 Celsius to 38 Celsius
-    	var minTemp = 20.0;
-    	var maxTemp = 60.0;
-        //set range for Temperature in Fahrenheit 23 Fahrenheit to 100 Fahrenheit
-    	//var minTemp = 23;
-    	//var maxTemp = 100;
+//set range for Temperature in Celsius -5 Celsius to 38 Celsius
+        var minTemp = 20.0;
+        var maxTemp = 60.0;
+//set range for Temperature in Fahrenheit 23 Fahrenheit to 100 Fahrenheit
+        //var minTemp = 23;
+        //var maxTemp = 100;
 
-    	var newVal = scaleValue(curVal, [minTemp, maxTemp], [0, 180]);
-    	$('.gauge--1 .semi-circle--mask').attr({
-    		style: '-webkit-transform: rotate(' + newVal + 'deg);' +
-    		'-moz-transform: rotate(' + newVal + 'deg);' +
-    		'transform: rotate(' + newVal + 'deg);'
-    	});
-    	$("#temp").text(curVal + ' ºC');
+        var newVal = scaleValue(curVal, [minTemp, maxTemp], [0, 180]);
+
+        $('.gauge--1 .semi-circle--mask').attr({
+        style: '-webkit-transform: rotate(' + newVal + 'deg);' +
+        '-moz-transform: rotate(' + newVal + 'deg);' +
+        'transform: rotate(' + newVal + 'deg);'
+        });
+        $("#temp").text(curVal + ' ºC');
     }
 
     function setHumidity(curVal){
