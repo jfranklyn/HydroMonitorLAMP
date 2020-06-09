@@ -87,48 +87,29 @@ Read sensor data from closet sensors. Added logic to read
 
 <!DOCTYPE html>
 <html>
-    <head>
-   <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
-   <script type="text/javascript">
-      google.charts.load('current', {'packages':['gauge']});
-      google.charts.setOnLoadCallback(drawChart);
+    <head><meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 
-      function drawChart() {
-        var data = google.visualization.arrayToDataTable([
-          ['Label', 'Value'],
-          ['Temperature - C', $last_reading_temp],
-          ['Humidity - RH', $last_reading_humi],
-          ['Pressure - Pa', $last_reading_press],
-          ['Ph - #', $last_reading_ph],
-          ['ORP - mV', $last_reading_rpo],
-          ['EC - R', $last_reading_ec]
-        ]);
-
-        var options = {
-          width: 500, height: 200,
-          redFrom: 90, redTo: 100,
-          yellowFrom:75, yellowTo: 90,
-          minorTicks: 5
-        };
-
-        var chart = new google.visualization.Gauge(document.getElementById('chart_div'));
-        chart.draw(data, options);
-</script>
-</head>
-
-<body>
-            <header class="header">
+        <link rel="stylesheet" type="text/css" href="esp-style.css">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    </head>
+    <header class="header">
         <h1>Hydroponic Monitoring Station</h1>
         <form method="get">
             <input type="number" name="readingsCount" min="1" placeholder="Number of readings (<?php echo $readings_count; ?>)">
             <input type="submit" value="UPDATE">
         </form>
-
-
+    </header>
+<body>
     <p>Last reading: <?php echo $last_reading_time; ?></p>
     <section class="content">
-        <div id="chart_div" style="width: 400px; height: 120px;"></div>
-
+        <div class="box gauge--1">
+            <h3>TEMPERATURE</h3>
+              <div class="mask">
+               <div class="semi-circle"></div>
+               <div class="semi-circle--mask"></div>
+            </div>
+            <p style="font-size: 30px;" id="temp">--</p>
            <table cellspacing="5" cellpadding="5">
                 <tr>
                     <th colspan="3">Average for the last <?php echo $readings_count; ?> readings</th>
@@ -151,6 +132,29 @@ Read sensor data from closet sensors. Added logic to read
                     <td><?php echo round($avg_ph['avg_amount'],2); ?> %</td>
                     <td><?php echo round($avg_rpo['avg_amount'], 2); ?> %</td>
                     <td><?php echo round($avg_ec['avg_amount'], 2); ?> %</td>                    
+                </tr>
+            </table>
+        </div>
+        <div class="box gauge--2">
+            <h3>HUMIDITY</h3>
+            <div class="mask">
+                <div class="semi-circle"></div>
+                <div class="semi-circle--mask"></div>
+            </div>
+            <p style="font-size: 30px;" id="humi">--</p>
+            <table cellspacing="5" cellpadding="5">
+                <tr>
+                    <th colspan="3">Humidity <?php echo $readings_count; ?> readings</th>
+                </tr>
+                <tr>
+                    <td>Min</td>
+                    <td>Max</td>
+                    <td>Average</td>
+                </tr>
+                <tr>
+                    <td><?php echo round($min_humi['min_amount'],2); ?> %</td>
+                    <td><?php echo round($max_humi['max_amount'], 2); ?> %</td>
+                    <td><?php echo round($avg_humi['avg_amount'], 2); ?> %</td>
                 </tr>
             </table>
         </div>
@@ -192,4 +196,52 @@ Read sensor data from closet sensors. Added logic to read
         $result->free();
     }
 ?>
+
+<script>
+    var valuetemp = <?php echo $last_reading_temp; ?>;
+    var valuehumi = <?php echo $last_reading_humi; ?>;
+    //alert (valuehumi);
+    //showMessage();
+    setTemperature(valuetemp);
+    setHumidity(valuehumi);
+
+    function setTemperature(curVal){
+//set range for Temperature in Celsius -5 Celsius to 38 Celsius
+        var minTemp = 20.0;
+        var maxTemp = 60.0;
+//set range for Temperature in Fahrenheit 23 Fahrenheit to 100 Fahrenheit
+        //var minTemp = 23;
+        //var maxTemp = 100;
+
+        var newVal = scaleValue(curVal, [minTemp, maxTemp], [0, 180]);
+
+        $('.gauge--1 .semi-circle--mask').attr({
+        style: '-webkit-transform: rotate(' + newVal + 'deg);' +
+        '-moz-transform: rotate(' + newVal + 'deg);' +
+        'transform: rotate(' + newVal + 'deg);'
+        });
+        $("#temp").text(curVal + ' ºC');
+    }
+
+    function setHumidity(curVal){
+    	//set range for Humidity percentage 0 % to 100 %
+    	var minHumi = 0;
+    	var maxHumi = 100;
+
+    	var newVal = scaleValue(curVal, [minHumi, maxHumi], [0, 180]);
+    	$('.gauge--2 .semi-circle--mask').attr({
+    		style: '-webkit-transform: rotate(' + newVal + 'deg);' +
+    		'-moz-transform: rotate(' + newVal + 'deg);' +
+    		'transform: rotate(' + newVal + 'deg);'
+    	});
+    	$("#humi").text(curVal + ' %');
+    }
+
+    function scaleValue(value, from, to) {
+        var scale = (to[1] - to[0]) / (from[1] - from[0]);
+        var capped = Math.min(from[1], Math.max(from[0], value)) - from[0];
+        return ~~(capped * scale + to[0]);
+    }
+</script>
+</body>
 </html>
