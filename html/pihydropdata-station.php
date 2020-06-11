@@ -57,6 +57,7 @@ Read sensor data from closet sensors. Added logic to read
     $min_temp = minReading($readings_count, 'dblvalueraw', $sensor, $location);
     $max_temp = maxReading($readings_count, 'dblvalueraw', $sensor, $location);
     $avg_temp = avgReading($readings_count, 'dblvalueraw', $sensor, $location);
+    echo "min temp = $min_temp[min_amount] <br>";
 
     $sensor = 'humidity';
     $min_humi = minReading($readings_count, 'dblvalueraw', $sensor, $location);
@@ -82,83 +83,130 @@ Read sensor data from closet sensors. Added logic to read
     $min_ec = minReading($readings_count, 'dblvalueraw', $sensor, $location);
     $max_ec = maxReading($readings_count, 'dblvalueraw', $sensor, $location);
     $avg_ec = avgReading($readings_count, 'dblvalueraw', $sensor, $location);
-
 ?>
 
 <!DOCTYPE html>
+<html lang="en">
 <html>
-    <head><meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <head>
+   <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+   <script type="text/javascript">
+   google.charts.load("current", {packages:["corechart"]});
+   google.charts.setOnLoadCallback(drawChart);
+ // convert data variables
+    var tmpmintemp;
+    tmpmintemp = <?php echo $min_temp["min_amount"]; ?>
+    tmpmintemp = eval(tmpmintemp);
+/*    var tmpavgtemp;
+    tmpavgtemp = <?php echo $avg_temp["avg_amount"]; ?>
+    tmpavgtemp = eval(tmpavgtemp);
+    var tmpmaxtemp;
+    tmpmaxtemp = <?php echo $max_temp["max_amount"]; ?>
+    tmpmaxtemp = eval(tmpmaxtemp);*/
+    function drawChart() {
+//  TEMPERATURE
+      var tempdata = google.visualization.arrayToDataTable([
+        ["Sensor Range", "Reading", { role: "style" } ],
+        ["Min Temperature", tmpmintemp, "blue"],
+        ["Avg Temperature", 134, "green"],
+        ["Max Temperature", 345, "red"]
+      ]);
 
-        <link rel="stylesheet" type="text/css" href="esp-style.css">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-    </head>
-    <header class="header">
-        <h1>Hydroponic Monitoring Station</h1>
-        <form method="get">
-            <input type="number" name="readingsCount" min="1" placeholder="Number of readings (<?php echo $readings_count; ?>)">
-            <input type="submit" value="UPDATE">
-        </form>
-    </header>
+      var view = new google.visualization.DataView(tempdata);
+      view.setColumns([0, 1,
+                       { calc: "stringify",
+                         sourceColumn: 1,
+                         type: "string",
+                         role: "annotation" },
+                       2]);
+
+      var options = {
+        title: "Temperature Sensor Readings",
+        width: 600,
+        height: 400,
+        bar: {groupWidth: "95%"},
+        legend: { position: "none" },
+      };
+      var chart = new google.visualization.ColumnChart(document.getElementById("temperature_values"));
+      chart.draw(view, options);
+// HUMIDITY
+// convert data variables
+/*
+    var tmpminhumi;
+    tmpminhumi = $min_humi;
+    tmpminhumi = eval(tmpminhumi);
+    var tmpavghumi;
+    tmpavghumi = avg_humi;
+    tmpavghumi = eval(tmpavghumi);
+    var tmpmaxhumi;
+    tmpmaxhumi = max_humi;
+    tmpmaxhumi = eval(tmpmaxhumi);
+      var humidata = google.visualization.arrayToDataTable([
+        ["Sensor", "Reading", { role: "style" } ],
+        ["Min Humidity", tmpminhumi, "blue"],
+        ["Avg Humidity", tmpavghumi, "green"],
+        ["Max Humidity", tmpmaxhumi, "red"]      ]);
+
+      var view = new google.visualization.DataView(humidata);
+      view.setColumns([0, 1,
+                       { calc: "stringify",
+                         sourceColumn: 1,
+                         type: "string",
+                         role: "annotation" },
+                       2]);
+
+      var options = {
+        title: "Humidity Sensor Readings",
+        width: 600,
+        height: 400,
+        bar: {groupWidth: "95%"},
+        legend: { position: "none" },
+      };
+      var chart = new google.visualization.ColumnChart(document.getElementById("humidity_values"));
+      chart.draw(view, options);
+*/
+
+      }
+</script>
+</head>
+
 <body>
-    <p>Last reading: <?php echo $last_reading_time; ?></p>
-    <section class="content">
-        <div class="box gauge--1">
-            <h3>TEMPERATURE</h3>
-              <div class="mask">
-               <div class="semi-circle"></div>
-               <div class="semi-circle--mask"></div>
-            </div>
-            <p style="font-size: 30px;" id="temp">--</p>
-           <table cellspacing="5" cellpadding="5">
-                <tr>
-                    <th colspan="3">Average for the last <?php echo $readings_count; ?> readings</th>
-               </tr>
-                 <tr>
-                    <p>
-                    <th>Temperature</th>
-                    <th>Humidity</th>
-                    <th>Pressure</th>
-                    <th>Ph</th>
-                    <th>RPO</th>
-                    <th>EC</th>
-                    </p>
-                 </tr>
+        <header class="header">
+            <h1>Hydroponic Monitoring Station</h1>
+                <form method="get">
+                    <input type="number" name="readingsCount" min="1" placeholder="Number of readings (<?php echo $readings_count; ?>)">
+                    <input type="submit" value="UPDATE">
+                </form>
 
-                <tr>
-                    <td><?php echo round($avg_temp['avg_amount'], 2); ?> &deg;C</td>
-                    <td><?php echo round($avg_humi['avg_amount'], 2); ?> RH</td>
-                    <td><?php echo round($avg_press['avg_amount'], 2); ?> Hg</td>
-                    <td><?php echo round($avg_ph['avg_amount'],2); ?> %</td>
-                    <td><?php echo round($avg_rpo['avg_amount'], 2); ?> %</td>
-                    <td><?php echo round($avg_ec['avg_amount'], 2); ?> %</td>                    
-                </tr>
-            </table>
-        </div>
-        <div class="box gauge--2">
-            <h3>HUMIDITY</h3>
-            <div class="mask">
-                <div class="semi-circle"></div>
-                <div class="semi-circle--mask"></div>
-            </div>
-            <p style="font-size: 30px;" id="humi">--</p>
-            <table cellspacing="5" cellpadding="5">
-                <tr>
-                    <th colspan="3">Humidity <?php echo $readings_count; ?> readings</th>
-                </tr>
-                <tr>
-                    <td>Min</td>
-                    <td>Max</td>
-                    <td>Average</td>
-                </tr>
-                <tr>
-                    <td><?php echo round($min_humi['min_amount'],2); ?> %</td>
-                    <td><?php echo round($max_humi['max_amount'], 2); ?> %</td>
-                    <td><?php echo round($avg_humi['avg_amount'], 2); ?> %</td>
-                </tr>
-            </table>
-        </div>
-    </section>
+            <div id="temperature_values" style="width: 300px; height: 200px;"></div>
+
+            <p>Last reading: <?php echo $last_reading_time; ?></p>
+            <section class="content">
+
+                   <table cellspacing="5" cellpadding="5">
+                        <tr>
+                            <th colspan="3">Average for the last <?php echo $readings_count; ?> readings</th>
+                       </tr>
+                         <tr>
+                            <p>
+                            <th>Temperature</th>
+                            <th>Humidity</th>
+                            <th>Pressure</th>
+                            <th>Ph</th>
+                            <th>RPO</th>
+                            <th>EC</th>
+                            </p>
+                         </tr>
+                        <tr>
+                            <td><?php echo round($avg_temp['avg_amount'], 2); ?> &deg;C</td>
+                            <td><?php echo round($avg_humi['avg_amount'], 2); ?> RH</td>
+                            <td><?php echo round($avg_press['avg_amount'], 2); ?> Hg</td>
+                            <td><?php echo round($avg_ph['avg_amount'],2); ?> %</td>
+                            <td><?php echo round($avg_rpo['avg_amount'], 2); ?> %</td>
+                            <td><?php echo round($avg_ec['avg_amount'], 2); ?> %</td>
+                        </tr>
+                    </table>
+            </section>
 <?php
     echo   '<h2> View Latest ' . $readings_count . ' Readings</h2>
             <table cellspacing="5" cellpadding="5" id="tableReadings">
@@ -173,75 +221,29 @@ Read sensor data from closet sensors. Added logic to read
 
     $result = getAllReadings($readings_count);
         if ($result) {
-        while ($row = $result->fetch_assoc()) {
-            $row_sensor = $row["sensor"];
-            $row_location = $row["location"];
-            $row_value1 = $row["dblvalueraw"];
-            $row_value2 = $row["value2"];
-            $row_reading_time = $row["reading_time"];
-            // Uncomment to set timezone to - 1 hour (you can change 1 to any number)
-            //$row_reading_time = date("Y-m-d H:i:s", strtotime("$row_reading_time - 1 hours"));
-            // Uncomment to set timezone to + 7 hours (you can change 7 to any number)
-            $row_reading_time = date("Y-m-d H:i:s", strtotime("$row_reading_time + 7 hours"));
+            while ($row = $result->fetch_assoc()) {
+                $row_sensor = $row["sensor"];
+                $row_location = $row["location"];
+                $row_value1 = $row["dblvalueraw"];
+                $row_value2 = $row["value2"];
+                $row_reading_time = $row["reading_time"];
+                // Uncomment to set timezone to - 1 hour (you can change 1 to any number)
+                //$row_reading_time = date("Y-m-d H:i:s", strtotime("$row_reading_time - 1 hours"));
+                // Uncomment to set timezone to + 7 hours (you can change 7 to any number)
+                $row_reading_time = date("Y-m-d H:i:s", strtotime("$row_reading_time + 7 hours"));
 
-            echo '<tr>
-                     <td>' . $row_sensor . '</td>
-                    <td>' . $row_location . '</td>
-                    <td>' . $row_value1 . '</td>
-                    <td>' . $row_value2 . '</td>
-                    <td>' . $row_reading_time . '</td>
-                  </tr>';
-        }
+                echo '<tr>
+                         <td>' . $row_sensor . '</td>
+                        <td>' . $row_location . '</td>
+                        <td>' . $row_value1 . '</td>
+                        <td>' . $row_value2 . '</td>
+                        <td>' . $row_reading_time . '</td>
+                      </tr>';
+            }
         echo '</table>';
         $result->free();
-    }
+        }
 ?>
 
-<script>
-    var valuetemp = <?php echo $last_reading_temp; ?>;
-    var valuehumi = <?php echo $last_reading_humi; ?>;
-    //alert (valuehumi);
-    //showMessage();
-    setTemperature(valuetemp);
-    setHumidity(valuehumi);
-
-    function setTemperature(curVal){
-//set range for Temperature in Celsius -5 Celsius to 38 Celsius
-        var minTemp = 20.0;
-        var maxTemp = 60.0;
-//set range for Temperature in Fahrenheit 23 Fahrenheit to 100 Fahrenheit
-        //var minTemp = 23;
-        //var maxTemp = 100;
-
-        var newVal = scaleValue(curVal, [minTemp, maxTemp], [0, 180]);
-
-        $('.gauge--1 .semi-circle--mask').attr({
-        style: '-webkit-transform: rotate(' + newVal + 'deg);' +
-        '-moz-transform: rotate(' + newVal + 'deg);' +
-        'transform: rotate(' + newVal + 'deg);'
-        });
-        $("#temp").text(curVal + ' ºC');
-    }
-
-    function setHumidity(curVal){
-    	//set range for Humidity percentage 0 % to 100 %
-    	var minHumi = 0;
-    	var maxHumi = 100;
-
-    	var newVal = scaleValue(curVal, [minHumi, maxHumi], [0, 180]);
-    	$('.gauge--2 .semi-circle--mask').attr({
-    		style: '-webkit-transform: rotate(' + newVal + 'deg);' +
-    		'-moz-transform: rotate(' + newVal + 'deg);' +
-    		'transform: rotate(' + newVal + 'deg);'
-    	});
-    	$("#humi").text(curVal + ' %');
-    }
-
-    function scaleValue(value, from, to) {
-        var scale = (to[1] - to[0]) / (from[1] - from[0]);
-        var capped = Math.min(from[1], Math.max(from[0], value)) - from[0];
-        return ~~(capped * scale + to[0]);
-    }
-</script>
-</body>
+    </body>
 </html>
