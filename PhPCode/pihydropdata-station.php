@@ -82,79 +82,110 @@ Read sensor data from closet sensors. Added logic to read
     $min_ec = minReading($readings_count, 'dblvalueraw', $sensor, $location);
     $max_ec = maxReading($readings_count, 'dblvalueraw', $sensor, $location);
     $avg_ec = avgReading($readings_count, 'dblvalueraw', $sensor, $location);
-
 ?>
 
 <!DOCTYPE html>
+<html lang="en">
 <html>
     <head>
    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
    <script type="text/javascript">
-      google.charts.load('current', {'packages':['gauge']});
-      google.charts.setOnLoadCallback(drawChart);
+   google.charts.load("current", {packages:["corechart"]});
+    google.charts.setOnLoadCallback(drawChart);
+    function drawChart() {
+//  TEMPERATURE
+      var tempdata = google.visualization.arrayToDataTable([
+        ["Sensor", "Reading", { role: "style" } ],
+        ["Min Temperature", 70.0, "blue"],
+        ["Avg Temperature", 76.2, "green"],
+        ["Max Temperature", 79.6, "red"]
+      ]);
 
-      function drawChart() {
-        var data = google.visualization.arrayToDataTable([
-          ['Label', 'Value'],
-          ['Temperature - C', $last_reading_temp],
-          ['Humidity - RH', $last_reading_humi],
-          ['Pressure - Pa', $last_reading_press],
-          ['Ph - #', $last_reading_ph],
-          ['ORP - mV', $last_reading_rpo],
-          ['EC - R', $last_reading_ec]
-        ]);
+      var view = new google.visualization.DataView(tempdata);
+      view.setColumns([0, 1,
+                       { calc: "stringify",
+                         sourceColumn: 1,
+                         type: "string",
+                         role: "annotation" },
+                       2]);
 
-        var options = {
-          width: 500, height: 200,
-          redFrom: 90, redTo: 100,
-          yellowFrom:75, yellowTo: 90,
-          minorTicks: 5
-        };
+      var options = {
+        title: "Temperature Sensor Readings",
+        width: 600,
+        height: 350,
+        bar: {groupWidth: "95%"},
+        legend: { position: "none" },
+      };
+      var chart = new google.visualization.BarChart(document.getElementById("temperature_values"));
+      chart.draw(view, options);
+// HUMIDITY
+      var humidata = google.visualization.arrayToDataTable([
+        ["Sensor", "Reading", { role: "style" } ],
+        ["Min Humidity", 60.0, "blue"],
+        ["Avg Humidity", 76.2, "green"],
+        ["Max Humidity", 90.6, "red"]      ]);
 
-        var chart = new google.visualization.Gauge(document.getElementById('chart_div'));
-        chart.draw(data, options);
+      var view = new google.visualization.DataView(humidata);
+      view.setColumns([0, 1,
+                       { calc: "stringify",
+                         sourceColumn: 1,
+                         type: "string",
+                         role: "annotation" },
+                       2]);
+
+      var options = {
+        title: "Humidity Sensor Readings",
+        width: 600,
+        height: 350,
+        bar: {groupWidth: "95%"},
+        legend: { position: "none" },
+      };
+      var chart = new google.visualization.ColumnChart(document.getElementById("humidity_values"));
+      chart.draw(view, options);
+
+      }
 </script>
 </head>
 
 <body>
-            <header class="header">
-        <h1>Hydroponic Monitoring Station</h1>
-        <form method="get">
-            <input type="number" name="readingsCount" min="1" placeholder="Number of readings (<?php echo $readings_count; ?>)">
-            <input type="submit" value="UPDATE">
-        </form>
+        <header class="header">
+            <h1>Hydroponic Monitoring Station</h1>
+                <form method="get">
+                    <input type="number" name="readingsCount" min="1" placeholder="Number of readings (<?php echo $readings_count; ?>)">
+                    <input type="submit" value="UPDATE">
+                </form>
+
+            <div id="temperature_values" style="width: 600px; height: 300px;"></div>
+            <div id="humidity_values" style="width: 600px; height: 300px;"></div>
 
 
-    <p>Last reading: <?php echo $last_reading_time; ?></p>
-    <section class="content">
-        <div id="chart_div" style="width: 400px; height: 120px;"></div>
+            <p>Last reading: <?php echo $last_reading_time; ?></p>
+            <section class="content">
 
-           <table cellspacing="5" cellpadding="5">
-                <tr>
-                    <th colspan="3">Average for the last <?php echo $readings_count; ?> readings</th>
-               </tr>
-                 <tr>
-                    <p>
-                    <th>Temperature</th>
-                    <th>Humidity</th>
-                    <th>Pressure</th>
-                    <th>Ph</th>
-                    <th>RPO</th>
-                    <th>EC</th>
-                    </p>
-                 </tr>
-
-                <tr>
-                    <td><?php echo round($avg_temp['avg_amount'], 2); ?> &deg;C</td>
-                    <td><?php echo round($avg_humi['avg_amount'], 2); ?> RH</td>
-                    <td><?php echo round($avg_press['avg_amount'], 2); ?> Hg</td>
-                    <td><?php echo round($avg_ph['avg_amount'],2); ?> %</td>
-                    <td><?php echo round($avg_rpo['avg_amount'], 2); ?> %</td>
-                    <td><?php echo round($avg_ec['avg_amount'], 2); ?> %</td>                    
-                </tr>
-            </table>
-        </div>
-    </section>
+                   <table cellspacing="5" cellpadding="5">
+                        <tr>
+                            <th colspan="3">Average for the last <?php echo $readings_count; ?> readings</th>
+                       </tr>
+                         <tr>
+                            <p>
+                            <th>Temperature</th>
+                            <th>Humidity</th>
+                            <th>Pressure</th>
+                            <th>Ph</th>
+                            <th>RPO</th>
+                            <th>EC</th>
+                            </p>
+                         </tr>
+                        <tr>
+                            <td><?php echo round($avg_temp['avg_amount'], 2); ?> &deg;C</td>
+                            <td><?php echo round($avg_humi['avg_amount'], 2); ?> RH</td>
+                            <td><?php echo round($avg_press['avg_amount'], 2); ?> Hg</td>
+                            <td><?php echo round($avg_ph['avg_amount'],2); ?> %</td>
+                            <td><?php echo round($avg_rpo['avg_amount'], 2); ?> %</td>
+                            <td><?php echo round($avg_ec['avg_amount'], 2); ?> %</td>
+                        </tr>
+                    </table>
+            </section>
 <?php
     echo   '<h2> View Latest ' . $readings_count . ' Readings</h2>
             <table cellspacing="5" cellpadding="5" id="tableReadings">
@@ -169,27 +200,29 @@ Read sensor data from closet sensors. Added logic to read
 
     $result = getAllReadings($readings_count);
         if ($result) {
-        while ($row = $result->fetch_assoc()) {
-            $row_sensor = $row["sensor"];
-            $row_location = $row["location"];
-            $row_value1 = $row["dblvalueraw"];
-            $row_value2 = $row["value2"];
-            $row_reading_time = $row["reading_time"];
-            // Uncomment to set timezone to - 1 hour (you can change 1 to any number)
-            //$row_reading_time = date("Y-m-d H:i:s", strtotime("$row_reading_time - 1 hours"));
-            // Uncomment to set timezone to + 7 hours (you can change 7 to any number)
-            $row_reading_time = date("Y-m-d H:i:s", strtotime("$row_reading_time + 7 hours"));
+            while ($row = $result->fetch_assoc()) {
+                $row_sensor = $row["sensor"];
+                $row_location = $row["location"];
+                $row_value1 = $row["dblvalueraw"];
+                $row_value2 = $row["value2"];
+                $row_reading_time = $row["reading_time"];
+                // Uncomment to set timezone to - 1 hour (you can change 1 to any number)
+                //$row_reading_time = date("Y-m-d H:i:s", strtotime("$row_reading_time - 1 hours"));
+                // Uncomment to set timezone to + 7 hours (you can change 7 to any number)
+                $row_reading_time = date("Y-m-d H:i:s", strtotime("$row_reading_time + 7 hours"));
 
-            echo '<tr>
-                     <td>' . $row_sensor . '</td>
-                    <td>' . $row_location . '</td>
-                    <td>' . $row_value1 . '</td>
-                    <td>' . $row_value2 . '</td>
-                    <td>' . $row_reading_time . '</td>
-                  </tr>';
-        }
+                echo '<tr>
+                         <td>' . $row_sensor . '</td>
+                        <td>' . $row_location . '</td>
+                        <td>' . $row_value1 . '</td>
+                        <td>' . $row_value2 . '</td>
+                        <td>' . $row_reading_time . '</td>
+                      </tr>';
+            }
         echo '</table>';
         $result->free();
-    }
+        }
 ?>
+
+    </body>
 </html>
