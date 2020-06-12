@@ -95,21 +95,22 @@ Read sensor data from closet sensors. Added logic to read
    google.charts.setOnLoadCallback(drawChart);
  // convert data variables
     var tmpmintemp;
-    tmpmintemp = <?php echo $min_temp["min_amount"]; ?>
+    tmpmintemp = <?php echo round($min_temp["min_amount"], 2); ?>
     tmpmintemp = eval(tmpmintemp);
-/*    var tmpavgtemp;
-    tmpavgtemp = <?php echo $avg_temp["avg_amount"]; ?>
+    var tmpavgtemp;
+    tmpavgtemp = <?php echo round($avg_temp["avg_amount"], 2); ?>
     tmpavgtemp = eval(tmpavgtemp);
     var tmpmaxtemp;
-    tmpmaxtemp = <?php echo $max_temp["max_amount"]; ?>
-    tmpmaxtemp = eval(tmpmaxtemp);*/
+    tmpmaxtemp = <?php echo round($max_temp["max_amount"], 2); ?>
+    tmpmaxtemp = eval(tmpmaxtemp);
+
     function drawChart() {
 //  TEMPERATURE
       var tempdata = google.visualization.arrayToDataTable([
         ["Sensor Range", "Reading", { role: "style" } ],
         ["Min Temperature", tmpmintemp, "blue"],
-        ["Avg Temperature", 134, "green"],
-        ["Max Temperature", 345, "red"]
+        ["Avg Temperature", tmpavgtemp, "green"],
+        ["Max Temperature", tmpmaxtemp, "red"]
       ]);
 
       var view = new google.visualization.DataView(tempdata);
@@ -131,16 +132,16 @@ Read sensor data from closet sensors. Added logic to read
       chart.draw(view, options);
 // HUMIDITY
 // convert data variables
-/*
     var tmpminhumi;
-    tmpminhumi = $min_humi;
+    tmpminhumi = <?php echo round($min_humi["min_amount"], 2); ?>
     tmpminhumi = eval(tmpminhumi);
     var tmpavghumi;
-    tmpavghumi = avg_humi;
+    tmpavghumi = <?php echo round($avg_humi["avg_amount"], 2); ?>
     tmpavghumi = eval(tmpavghumi);
     var tmpmaxhumi;
-    tmpmaxhumi = max_humi;
+    tmpmaxhumi = <?php echo round($max_humi["max_amount"], 2); ?>
     tmpmaxhumi = eval(tmpmaxhumi);
+
       var humidata = google.visualization.arrayToDataTable([
         ["Sensor", "Reading", { role: "style" } ],
         ["Min Humidity", tmpminhumi, "blue"],
@@ -164,7 +165,6 @@ Read sensor data from closet sensors. Added logic to read
       };
       var chart = new google.visualization.ColumnChart(document.getElementById("humidity_values"));
       chart.draw(view, options);
-*/
 
       }
 </script>
