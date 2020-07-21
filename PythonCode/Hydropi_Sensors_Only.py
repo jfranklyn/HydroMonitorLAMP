@@ -156,72 +156,72 @@ def check_for_only_one_reference_temperature():
 # Create required database in the MySQL if it doesn't' already exist
 
 
-def create_database():
-
-    conn = mariadb.connect(user=username,
-                           password=password,
-                           host=servername)
-    curs = conn.cursor()
-    try:
-        curs.execute("SET sql_notes = 0; ")  # Hide Warnings
-        curs.execute("CREATE DATABASE IF NOT EXISTS {}".format(dbname))
-        curs.execute("SET sql_notes = 1; ")  # Show Warnings
-    except mariadb.Error as error:
-        print("Error: {}".format(error))
-        pass
-    conn.commit()
-    conn.close()
-    return
-
-
-def open_database_connection():
-
-    conn = mariadb.connect(user=username,
-                           password=password,
-                           host=servername,
-                           database=dbname)
-    curs = conn.cursor()
-    try:
-        curs.execute("SET sql_notes = 0; ")  # Hide Warnings
-    except mariadb.Error as error:
-        print("Error: {}".format(error))
-        pass
-
-    return conn, curs
-
-
-def close_database_connection(conn, curs):
-
-    try:
-        curs.execute("SET sql_notes = 1; ")  # Show Warnings
-    except mariadb.Error as error:
-        print("Error: {}".format(error))
-        pass
-    conn.commit()
-    conn.close()
-
-
-def create_sensors_table():
-
-    conn, curs = open_database_connection()
-    try:
-        curs.execute("CREATE TABLE IF NOT EXISTS sensors (timestamp DATETIME);")
-    except mariadb.Error as error:
-        print("Error: {}".format(error))
-        pass
-
-    for key, value in list(sensors.items()):
-        if value["is_connected"] is True:
-            try:
-                curs.execute("ALTER TABLE sensors ADD {} DECIMAL(10,2);"
-                .format(value["name"]))
-            except mariadb.Error as error:
-                print("Error: {}".format(error))
-                pass
-
-    close_database_connection(conn, curs)
-
-    return
+# def create_database():
+#
+#     conn = mariadb.connect(user=username,
+#                            password=password,
+#                            host=servername)
+#     curs = conn.cursor()
+#     try:
+#         curs.execute("SET sql_notes = 0; ")  # Hide Warnings
+#         curs.execute("CREATE DATABASE IF NOT EXISTS {}".format(dbname))
+#         curs.execute("SET sql_notes = 1; ")  # Show Warnings
+#     except mariadb.Error as error:
+#         print("Error: {}".format(error))
+#         pass
+#     conn.commit()
+#     conn.close()
+#     return
+#
+#
+# def open_database_connection():
+#
+#     conn = mariadb.connect(user=username,
+#                            password=password,
+#                            host=servername,
+#                            database=dbname)
+#     curs = conn.cursor()
+#     try:
+#         curs.execute("SET sql_notes = 0; ")  # Hide Warnings
+#     except mariadb.Error as error:
+#         print("Error: {}".format(error))
+#         pass
+#
+#     return conn, curs
+#
+#
+# def close_database_connection(conn, curs):
+#
+#     try:
+#         curs.execute("SET sql_notes = 1; ")  # Show Warnings
+#     except mariadb.Error as error:
+#         print("Error: {}".format(error))
+#         pass
+#     conn.commit()
+#     conn.close()
+#
+#
+# def create_sensors_table():
+#
+#     conn, curs = open_database_connection()
+#     try:
+#         curs.execute("CREATE TABLE IF NOT EXISTS sensors (timestamp DATETIME);")
+#     except mariadb.Error as error:
+#         print("Error: {}".format(error))
+#         pass
+#
+#     for key, value in list(sensors.items()):
+#         if value["is_connected"] is True:
+#             try:
+#                 curs.execute("ALTER TABLE sensors ADD {} DECIMAL(10,2);"
+#                 .format(value["name"]))
+#             except mariadb.Error as error:
+#                 print("Error: {}".format(error))
+#                 pass
+#
+#     close_database_connection(conn, curs)
+#
+#     return
 
 
 def remove_unused_sensors():
