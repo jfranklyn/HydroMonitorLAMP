@@ -1,0 +1,11 @@
+Hi
+
+This is an email that was created by embedding a text file
+
+For more information log into
+
+http://myhydropi.com/send-email-with-a-raspberry-pi-and-python#emailbody
+
+Regards
+
+MyHydroPi

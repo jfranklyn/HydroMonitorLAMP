@@ -5,8 +5,7 @@
 #   changed code to use SPI instead of i2c for BME280
 #   ph, rpo, ec, water level sensors will be added
 #################################################################################################
-from mysql.connector import MySQLConnection, Error
-from python_mysql_dbconfig import *
+from PythonCode.python_mysql_dbconfig import *
 from signal import signal, SIGINT
 from sys import exit
 
@@ -15,6 +14,13 @@ import board
 import busio
 import digitalio
 import adafruit_bme280
+
+# Setup objects for ADS1115 board
+i2c = busio.I2C(board.SCL, board.SDA)
+import adafruit_ads1x15.ads1115 as ADS
+
+ads = ADS.ADS1115(i2c)
+
 
 # Create library object using SPI port
 spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
