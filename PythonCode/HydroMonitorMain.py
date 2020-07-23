@@ -59,57 +59,9 @@ def init():
 # AdaFruit BME288 temperature, pressure, humidity sensor added. This sensor uses SPI
 # AdaFruit, Optomax digital liquid level gauges added. These gauges are connected directly through GPIO
 
-    sensors = OrderedDict([
-        ("temp_1_sub", {  # DS18B20 AdaFruit Submerged Temperature Sensor
-        "sensor_type": "1_wire_temp",
-        "name": "ds18b20_temp",
-        "is_connected": True,
-        "is_ref": False,
-        "ds18b20_file":
-            "/sys/bus/w1/devices/28-01157127dfff/w1_slave",
-        "accuracy": 1}),
 
-        ("bme288_sensor_1", {  # BME288 Temp/Humidity/Pressure Sensor
-           "sensor_type": "bme288_spi_temp_humid_press",
-           "name": "bme288_SPI",
-           "is_connected": True,
-           "is_ref": True,
-           "i2c": 0,
-           "accuracy": 1}),
 
-        ("gravity_sensor_2", {  # ORP Gravity Sensor
-           "sensor_type": "gravity_orp",
-           "name": "orp",
-           "is_connected": True,
-           "is_ref": False,
-           "i2c": 48,
-           "accuracy": 2}),
-
-        ("gravity_sensor_3", {  # pH Gravity Sensor
-           "sensor_type": "gravity_ph",
-           "name": "ph",
-           "is_connected": True,
-           "is_ref": False,
-           "i2c": 48,
-           "accuracy": 0}),
-
-        ("gravity_sensor_4", {  # Gravity EC Sensor
-           "sensor_type": "gravity_ec",
-           "name": "ec",
-           "is_connected": True,
-           "is_ref": False,
-           "i2c": 48,
-           "accuracy": 0,
-           "ppm_multiplier": 0.67}),  # Convert EC to PPM
-
-        ("optomax_sensor_1", {  # Optomax Digital Liquid Sensor
-           "sensor_type": "optomax_liquid_level",
-           "name": "liquid_lev",
-           "is_connected": True,
-           "is_ref": False,
-           "i2c": 0,
-           "accuracy": 0})])
-
+# not used
 def check_for_only_one_reference_temperature():
     ref_check = 0
 
@@ -130,6 +82,7 @@ def check_for_only_one_reference_temperature():
         sys.exit()  # Stop program
     return
 
+# not used
 def remove_unused_sensors():
     conn, curs = open_database_connection()
 
@@ -181,11 +134,12 @@ def read_1_wire_temp(temp_num):
 
 def log_sensor_readings(all_curr_readings):
     # Create a timestamp and store all readings on the MySQL database
+    dbconfig = read_db_config()
+    conn = MySQLConnection(**dbconfig)
 
     conn, curs = open_database_connection()
     try:
-        curs.execute("INSERT INTO sensors (timestamp) VALUES(now());")
-        curs.execute("SELECT MAX(timestamp) FROM sensors")
+        curs.execute("SELECT MAX(reading_time) FROM SensorData")
     except mariadb.Error as error:
         print("Error: {}".format(error))
         pass
@@ -194,7 +148,7 @@ def log_sensor_readings(all_curr_readings):
 
     for readings in all_curr_readings:
         try:
-            curs.execute(("UPDATE sensors SET {} = {} WHERE timestamp = '{}'")
+            curs.execute(("UPDATE SensorData SET {} = {} WHERE timestamp = '{}'")
                          .format(readings[0], readings[1], last_timestamp))
         except mariadb.Error as error:
             print("Error: {}".format(error))
@@ -203,7 +157,6 @@ def log_sensor_readings(all_curr_readings):
     close_database_connection(conn, curs)
 
     return
-
 
 def read_sensors():
     all_curr_readings = []
@@ -281,6 +234,58 @@ def handler(signal_received, frame):
     exit(0)
 
 
+sensors = OrderedDict([
+("temp_1_sub", {  # DS18B20 AdaFruit Submerged Temperature Sensor
+    "sensor_type": "1_wire_temp",
+    "name": "ds18b20_temp",
+    "is_connected": True,
+    "is_ref": False,
+    "ds18b20_file":
+    "/sys/bus/w1/devices/28-01157127dfff/w1_slave",
+    "accuracy": 1}),
+
+("bme288_sensor_1", {  # BME288 Temp/Humidity/Pressure Sensor
+   "sensor_type": "bme288_spi_temp_humid_press",
+   "name": "bme288_SPI",
+   "is_connected": True,
+   "is_ref": True,
+   "i2c": 0,
+   "accuracy": 1}),
+
+("gravity_sensor_2", {  # ORP Gravity Sensor
+   "sensor_type": "gravity_orp",
+   "name": "orp",
+   "is_connected": True,
+   "is_ref": False,
+   "i2c": 48,
+   "accuracy": 2}),
+
+("gravity_sensor_3", {  # pH Gravity Sensor
+   "sensor_type": "gravity_ph",
+   "name": "ph",
+   "is_connected": True,
+   "is_ref": False,
+   "i2c": 48,
+   "accuracy": 0}),
+
+("gravity_sensor_4", {  # Gravity EC Sensor
+   "sensor_type": "gravity_ec",
+   "name": "ec",
+   "is_connected": True,
+   "is_ref": False,
+   "i2c": 48,
+   "accuracy": 0,
+   "ppm_multiplier": 0.67}),  # Convert EC to PPM
+
+("optomax_sensor_1", {  # Optomax Digital Liquid Sensor
+   "sensor_type": "optomax_liquid_level",
+   "name": "liquid_lev",
+   "is_connected": True,
+   "is_ref": False,
+   "i2c": 0,
+   "accuracy": 0})])
+
+
 def main():
     # change this to match the location's pressure (hPa) at sea level
     bme280.sea_level_pressure = 1013.25
@@ -313,7 +318,7 @@ def main():
 
         insert_SensorDataRows(SensorDataRowsLeft)
 
-# Read all sensors connected to the ADS1115. Gravity sensors
+# Read all sensors connected to the ADS1115. Gravity sensors . 6 sensors attached
         read_sensors()
 
         time.sleep(sleep_timer)  # sleep for 10 minutes
