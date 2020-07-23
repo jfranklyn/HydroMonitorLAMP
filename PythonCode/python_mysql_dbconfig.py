@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from mysql.connector import MySQLConnection, Error
 from configparser import ConfigParser
 

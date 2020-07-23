@@ -1,10 +1,13 @@
-################################################################################################
-#   John Franklyn 06/18/2020
-#   BME280 python 3.7 code
-#   output written to mysql database pihydropdata
-#   changed code to use SPI instead of i2c for BME280
-#   ph, rpo, ec, water level sensors will be added
-#################################################################################################
+#!/usr/bin/env python3
+"""
+   John Franklyn 06/18/2020
+   BME280 python 3.7 code
+   output written to mysql database pihydropdata
+   changed code to use SPI instead of i2c for BME280
+   ph, rpo, ec, water level sensors will be added
+:return:
+"""
+
 from PythonCode.python_mysql_dbconfig import *
 from signal import signal, SIGINT
 from sys import exit
@@ -15,54 +18,39 @@ import busio
 import digitalio
 import adafruit_bme280
 import adafruit_ads1x15.ads1115 as ADS
-import io
+from adafruit_ads1x15.analog_in import AnalogIn
+#import io
 import os
 import sys
-import fcntl
+#import fcntl
 #import mysql.connector as mariadb
 from time import sleep
 from collections import OrderedDict
 
 # initialize all objects
-def init():
+
 # Load Raspberry Pi Drivers for AdaFruit 1-Wire Temperature Sensor
-    os.system('modprobe w1-gpio')
-    os.system('modprobe w1-therm')
+os.system('modprobe w1-gpio')
+os.system('modprobe w1-therm')
 
 # Setup objects for ADS1115 board
-    i2c = busio.I2C(board.SCL, board.SDA)
+i2c = busio.I2C(board.SCL, board.SDA)
 
-    ads = ADS.ADS1115(i2c)
+ads = ADS.ADS1115(i2c)
 
-# Create library object using SPI port
-    spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
-    cs = digitalio.DigitalInOut(board.D5)
-    bme280 = adafruit_bme280.Adafruit_BME280_SPI(spi, cs)
+# Create library object using SPI port for BME280
+spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
+cs = digitalio.DigitalInOut(board.D5)
+bme280 = adafruit_bme280.Adafruit_BME280_SPI(spi, cs)
 
-    sleep_timer = 600  # 10 minutes
-
-# Configuration Settings
-
-# Define the sensor names, what sensors are connected, the sensor type, the
-# Gravity I2C addresses and define a primary temperature sensor.
-# In the case shown below that would be either "temp_1" or "atlas_sensor_1".
-# This is the sensor that is in the liquid that is being sampled and is used
-# as a reference by the other sensors. If there are no temperature sensors
-# connected a default value of 25C will be applied.
-#
-# Note: The temperature sensors cannot both be set to "is_ref: True", also
-# "temp_1" must always be a DS18B20 type sensor and "temp_1_sub" must
-# always be type temperature sensor so that the reference
-# temperature is always set before the other Gravity sensors are read.
-# AdaFruit ADS1115 ADC+PGA controller used as the i2c interface for the pH, ORP, EC sensors
-# This code was updated to support multiple hydroponic tanks
-# AdaFruit BME288 temperature, pressure, humidity sensor added. This sensor uses SPI
-# AdaFruit, Optomax digital liquid level gauges added. These gauges are connected directly through GPIO
-
-
+sleep_timer = 600  # sensors are read every 10 minutes
 
 # not used
 def check_for_only_one_reference_temperature():
+    """
+    Verify that ony one temperature sensor is used for reference be the other sensors
+    :return:
+    """
     ref_check = 0
 
     for key, value in list(sensors.items()):
@@ -70,10 +58,7 @@ def check_for_only_one_reference_temperature():
             if value["sensor_type"] == "1_wire_temp":
                 if value["is_ref"] is True:
                     ref_check += 1
-            if value["sensor_type"] == "atlas_temp":
-                if value["is_ref"] is True:
-                    ref_check += 1
-    if ref_check > 1:
+     if ref_check > 1:
         os.system('clear')
         print("\n\n                     !!!! WARNING !!!!\n\n"
               "You can only have one Primary Temperature sensor, Please set the\n"
@@ -84,6 +69,10 @@ def check_for_only_one_reference_temperature():
 
 # not used
 def remove_unused_sensors():
+    """
+    Used to remove unused sensors from the database
+    :return:
+    """
     conn, curs = open_database_connection()
 
     for key, value in list(sensors.items()):
@@ -103,6 +92,11 @@ def remove_unused_sensors():
 # Read in the data from the Submerged Temp Sensor file
 
 def read_1_wire_temp_raw(temp_num):
+    """
+    read the un-calculated value from the submerged temperature sensor
+    :param temp_num:
+    :return:
+    """
     f = open(sensors[temp_num]["ds18b20_file"], 'r')
     lines = f.readlines()
     f.close()
@@ -113,6 +107,11 @@ def read_1_wire_temp_raw(temp_num):
 # Process the Temp Sensor file for errors and convert to degrees C
 
 def read_1_wire_temp(temp_num):
+    """
+    Read the calculated value from the temperature sensor
+    :param temp_num:
+    :return:
+    """
     lines = read_1_wire_temp_raw(temp_num)
 
     while lines[0].strip()[-3:] != 'YES':
@@ -129,10 +128,12 @@ def read_1_wire_temp(temp_num):
 
         return temp_curr
 
-
-# read and log each sensor if it is set to True in the sensors list
-
 def log_sensor_readings(all_curr_readings):
+    """
+    read and log each sensor if it is set to True in the sensors list
+    :param all_curr_readings:
+    :return:
+    """
     # Create a timestamp and store all readings on the MySQL database
     dbconfig = read_db_config()
     conn = MySQLConnection(**dbconfig)
@@ -158,8 +159,12 @@ def log_sensor_readings(all_curr_readings):
 
     return
 
-def read_sensors():
-    all_curr_readings = []
+def read_sensors(all_curr_readings):
+    """
+    Read the sensor data from the sensors connected to the ADS1115
+    :return:
+    """
+
     ref_temp = 25
 
     # Get the readings from any 1-Wire temperature sensors. This sensor is submerged in the tank
@@ -178,61 +183,103 @@ def read_sensors():
                 if value["is_ref"] is True:
                     ref_temp = sensor_reading
 
-            # Get the readings from any Gravity temperature sensors
-
-            if value["sensor_type"] == "atlas_scientific_temp":
-                device = atlas_i2c(value["i2c"])
-                try:
-                    sensor_reading = round(float(device.query("R")),
-                                           value["accuracy"])
-                except:
-                    sensor_reading = 50
-
-                all_curr_readings.append([value["name"], sensor_reading])
-
-                if value["is_ref"] is True:
-                    ref_temp = sensor_reading
-
-            # Get the readings from any Gravity Elec Conductivity sensors
+            # Get the readings from any Gravity pH sensors
+            # ADS channel P0
 
             if value["sensor_type"] == "gravity_ec":
-                device = atlas_i2c(value["i2c"])
-                # Set reference temperature value on the sensor
-                device.query("T," + str(ref_temp))
+                # Create single-ended input on channel 0
                 try:
-                    sensor_reading = (round(((float(device.query("R"))) *
-                                             value["ppm_multiplier"]), value["accuracy"]))
-                except:
-                    sensor_reading = 10000
+                    chan = AnalogIn(ads, ADS.P0)
 
-                all_curr_readings.append([value["name"], sensor_reading])
+                    # Create differential input between channel 0 and 1
+                    # chan = AnalogIn(ads, ADS.P0, ADS.P1)
+                    # debug
+                    #                print("{:>5}\t{:>5.3f}".format(chan.value, chan.voltage))
+                    all_curr_readings.append([value["name"], chan.value])
+                except:
+                    if value["name"] == "ph":
+                        sensor_reading = 0.0
+
+            # Get the readings from any Gravity Electrical Conductivity sensors
+            # ADS channel P1
+
+            if value["sensor_type"] == "gravity_ec":
+                # Create single-ended input on channel 0
+                try:
+                    chan = AnalogIn(ads, ADS.P1)
+
+                    # Create differential input between channel 0 and 1
+                    # chan = AnalogIn(ads, ADS.P0, ADS.P1)
+    # debug
+    #                print("{:>5}\t{:>5.3f}".format(chan.value, chan.voltage))
+                    all_curr_readings.append([value["name"], chan.value])
+                except:
+                    if value["name"] == "ec":
+                        sensor_reading = 0.0
+
+            # Get the readings from any Gravity ORP sensors
+            # ADS channel P2
+
+            if value["sensor_type"] == "gravity_orp":
+                # Create single-ended input on channel 0
+                try:
+                    chan = AnalogIn(ads, ADS.P2)
+
+                    # Create differential input between channel 0 and 1
+                    # chan = AnalogIn(ads, ADS.P0, ADS.P1)
+                    # debug
+                    #                print("{:>5}\t{:>5.3f}".format(chan.value, chan.voltage))
+                    all_curr_readings.append([value["name"], chan.value])
+                except:
+                    if value["name"] == "orp":
+                        sensor_reading = 0.0
 
             # Get the readings from any other Gravity sensors
 
-            if value["sensor_type"] == "atlas_scientific":
-                device = atlas_i2c(value["i2c"])
-                # Set reference temperature value on the sensor
-                device.query("T," + str(ref_temp))
-                try:
-                    sensor_reading = round(float(device.query("R")),
-                                           value["accuracy"])
-                except:
-                    if value["name"] == "ph":
-                        sensor_reading = 2
-                    elif value["name"] == "orp":
-                        sensor_reading = 1000
-
-                all_curr_readings.append([value["name"], sensor_reading])
-
-    log_sensor_readings(all_curr_readings)
+            # if value["sensor_type"] == "atlas_scientific":
+            #     device = atlas_i2c(value["i2c"])
+            #     # Set reference temperature value on the sensor
+            #     device.query("T," + str(ref_temp))
+            #     try:
+            #         sensor_reading = round(float(device.query("R")),
+            #                                value["accuracy"])
+            #     except:
+            #         if value["name"] == "ph":
+            #             sensor_reading = 2
+            #         elif value["name"] == "orp":
+            #             sensor_reading = 1000
+            #
+            #     all_curr_readings.append([value["name"], sensor_reading])
 
     return
 
-def handler(signal_received, frame):
-    # Handle any cleanup here
-    print('SIGINT or CTRL-C detected. Exiting gracefully')
-    exit(0)
+ def handler(signal_received, frame):
+     """
+    keyboard interrupt handler
+     :param signal_received:
+     :param frame:
+     """
+     # Handle any cleanup he    re
+     print('SIGINT or CTRL-C detected. Exiting gracefully')
+     exit(0)
 
+# Configuration Settings
+
+# Define the sensor names, what sensors are connected, the sensor type, the
+# Gravity I2C addresses and define a primary temperature sensor.
+# In the case shown below that would be either "temp_1" or "atlas_sensor_1".
+# This is the sensor that is in the liquid that is being sampled and is used
+# as a reference by the other sensors. If there are no temperature sensors
+# connected a default value of 25C will be applied.
+#
+# Note: The temperature sensors cannot both be set to "is_ref: True", also
+# "temp_1" must always be a DS18B20 type sensor and "temp_1_sub" must
+# always be type temperature sensor so that the reference
+# temperature is always set before the other Gravity sensors are read.
+# AdaFruit ADS1115 ADC+PGA controller used as the i2c interface for the pH, ORP, EC sensors
+# This code was updated to support multiple hydroponic tanks
+# AdaFruit BME288 temperature, pressure, humidity sensor added. This sensor uses SPI
+# AdaFruit, Optomax digital liquid level gauges added. These gauges are connected directly through GPIO
 
 sensors = OrderedDict([
 ("temp_1_sub", {  # DS18B20 AdaFruit Submerged Temperature Sensor
@@ -287,10 +334,13 @@ sensors = OrderedDict([
 
 
 def main():
+    """
+    read data from all sensors and write to to the mysql database
+    """
     # change this to match the location's pressure (hPa) at sea level
     bme280.sea_level_pressure = 1013.25
 # initialize all objects
-    init()
+#    init()
     while True:
         signal(SIGINT, handler)
         print('Running. Press CTRL-C to exit.')
@@ -319,7 +369,10 @@ def main():
         insert_SensorDataRows(SensorDataRowsLeft)
 
 # Read all sensors connected to the ADS1115. Gravity sensors . 6 sensors attached
-        read_sensors()
+        all_curr_readings = []
+        read_sensors(all_curr_readings)
+#   update the database will all sensor readings
+        log_sensor_readings(all_curr_readings)
 
         time.sleep(sleep_timer)  # sleep for 10 minutes
 
