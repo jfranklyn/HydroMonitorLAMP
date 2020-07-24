@@ -255,7 +255,7 @@ def read_sensors(all_curr_readings, location):
 
 def handler(signal_received, frame):
     """
-    Handle keyboard interruts
+    Handle keyboard interrupts
     :param signal_received:
     :param frame:
     """
