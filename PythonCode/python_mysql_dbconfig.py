@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
-from mysql.connector import MySQLConnection, Error
 from configparser import ConfigParser
+
+from mysql.connector import MySQLConnection, Error
+
 
 def read_db_config(filename='pihydropdata.ini', section='mysql'):
     """ Read database configuration file and return a dictionary object
@@ -23,7 +25,11 @@ def read_db_config(filename='pihydropdata.ini', section='mysql'):
 
     return db
 
+
 def query_with_fetchone():
+    """
+    Select to fetch one row
+    """
     try:
         dbconfig = read_db_config()
         conn = MySQLConnection(**dbconfig)
@@ -43,7 +49,11 @@ def query_with_fetchone():
         cursor.close()
         conn.close()
 
+
 def query_with_fetchall():
+    """
+    Select to return multiple rows
+    """
     try:
         dbconfig = read_db_config()
         conn = MySQLConnection(**dbconfig)
@@ -62,8 +72,14 @@ def query_with_fetchall():
         cursor.close()
         conn.close()
 
+
 # itierator to fetch a small number of rows
 def iter_row(cursor, size=10):
+    """
+    Select to return rows in chunks. Sometimes more efficient
+    :param cursor:
+    :param size:
+    """
     while True:
         rows = cursor.fetchmany(size)
         if not rows:
@@ -71,8 +87,12 @@ def iter_row(cursor, size=10):
         for row in rows:
             yield row
 
+
 #   use the iterator to fetch the rows in chunks
 def query_with_fetchmany():
+    """
+    Fetch all rows. Not user
+    """
     try:
         dbconfig = read_db_config()
         conn = MySQLConnection(**dbconfig)
@@ -90,8 +110,16 @@ def query_with_fetchmany():
         cursor.close()
         conn.close()
 
+
 #   Insert a single row
-def insert_SensorDataRow(sensor, location, dblvalue_raw, value2):
+def insert_sensordatarow(sensor, location, dblvalue_raw, value2):
+    """
+    Insert statment for sensor row data - One row
+    :param sensor:
+    :param location:
+    :param dblvalue_raw:
+    :param value2:
+    """
     query = "INSERT INTO SensorData(sensor, location, dblvalue_raw, value2) " \
             "VALUES(%s, %s, %d, %s)"
     args = (sensor, location, dblvalue_raw, value2)
@@ -116,20 +144,25 @@ def insert_SensorDataRow(sensor, location, dblvalue_raw, value2):
         cursor.close()
         conn.close()
 
+
 #   Insert multiple rows for all sensors
-def insert_SensorDataRows(rows):
+def insert_sensordatarows(rows):
+    """
+    Insert statment for sensor row data - Multiple rows
+    :param rows:
+    """
     query = "INSERT INTO SensorData(sensor, location, dblvalue_raw, value2) " \
             "VALUES(%s, %s, %s, %s)"
 
     try:
-        print('Connecting to MySQL database:pihydropdata')        
+        print('Connecting to MySQL database:pihydropdata')
         db_config = read_db_config()
         conn = MySQLConnection(**db_config)
         if conn.is_connected():
             print('Connection established.')
         else:
             print('Connection failed.')
-            
+
         cursor = conn.cursor()
         cursor.executemany(query, rows)
 
@@ -142,7 +175,16 @@ def insert_SensorDataRows(rows):
         conn.close()
         print('Connection Closed.')
 
-def update_SensorDataRows(id, sensor, location, dblvalue_raw, value2):
+
+def update_sensordatarows(id, sensor, location, dblvalue_raw, value2):
+    """
+    update for multiple rows
+    :param id:
+    :param sensor:
+    :param location:
+    :param dblvalue_raw:
+    :param value2:
+    """
     # read database configuration
     db_config = read_db_config()
 
@@ -168,4 +210,4 @@ def update_SensorDataRows(id, sensor, location, dblvalue_raw, value2):
 
     finally:
         cursor.close()
-        conn.close()   
+        conn.close()

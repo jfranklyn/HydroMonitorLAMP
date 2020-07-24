@@ -8,24 +8,50 @@
 :return:
 """
 
-from PythonCode.python_mysql_dbconfig import *
+#import io
+#import fcntl
+#import mysql.connector as mariadb
+# import io
+import os
+import sys
+import time
+from collections import OrderedDict
 from signal import signal, SIGINT
 from sys import exit
+# import fcntl
+# import mysql.connector as mariadb
+from time import sleep
 
-import time
+import adafruit_ads1x15.ads1115 as ADS
+import adafruit_bme280
 import board
 import busio
 import digitalio
-import adafruit_bme280
-import adafruit_ads1x15.ads1115 as ADS
 from adafruit_ads1x15.analog_in import AnalogIn
-#import io
+
+from PythonCode.python_mysql_dbconfig import *
+# import io
+# import fcntl
+# import mysql.connector as mariadb
+# import io
 import os
 import sys
-#import fcntl
-#import mysql.connector as mariadb
-from time import sleep
+import time
 from collections import OrderedDict
+from signal import signal, SIGINT
+from sys import exit
+# import fcntl
+# import mysql.connector as mariadb
+from time import sleep
+
+import adafruit_ads1x15.ads1115 as ADS
+import adafruit_bme280
+import board
+import busio
+import digitalio
+from adafruit_ads1x15.analog_in import AnalogIn
+
+from PythonCode.python_mysql_dbconfig import *
 
 # initialize all objects
 
@@ -58,35 +84,35 @@ def check_for_only_one_reference_temperature():
             if value["sensor_type"] == "1_wire_temp":
                 if value["is_ref"] is True:
                     ref_check += 1
-     if ref_check > 1:
-        os.system('clear')
-        print("\n\n                     !!!! WARNING !!!!\n\n"
-              "You can only have one Primary Temperature sensor, Please set the\n"
-              "Temperature sensor that is in the liquid you are testing to True\n"
-              "and the other to False\n\n                     !!!! WARNING !!!!\n\n")
-        sys.exit()  # Stop program
+         if ref_check > 1:
+            os.system('clear')
+            print("\n\n                     !!!! WARNING !!!!\n\n"
+                  "You can only have one Primary Temperature sensor, Please set the\n"
+                  "Temperature sensor that is in the liquid you are testing to True\n"
+                  "and the other to False\n\n                     !!!! WARNING !!!!\n\n")
+            sys.exit()  # Stop program
     return
 
 # not used
-def remove_unused_sensors():
-    """
-    Used to remove unused sensors from the database
-    :return:
-    """
-    conn, curs = open_database_connection()
-
-    for key, value in list(sensors.items()):
-        if value["is_connected"] is False:
-            try:
-                curs.execute("ALTER TABLE sensors DROP {};"
-                             .format(value["name"]))
-            except mariadb.Error as error:
-                print("Error: {}".format(error))
-                pass
-
-    close_database_connection(conn, curs)
-
-    return
+# def remove_unused_sensors():
+#     """
+#     Used to remove unused sensors from the database
+#     :return:
+#     """
+#     conn, curs = open_database_connection()
+#
+#     for key, value in list(sensors.items()):
+#         if value["is_connected"] is False:
+#             try:
+#                 curs.execute("ALTER TABLE sensors DROP {};"
+#                              .format(value["name"]))
+#             except mariadb.Error as error:
+#                 print("Error: {}".format(error))
+#                 pass
+#
+#     close_database_connection(conn, curs)
+#
+#     return
 
 
 # Read in the data from the Submerged Temp Sensor file
@@ -135,13 +161,20 @@ def log_sensor_readings(all_curr_readings):
     :return:
     """
     # Create a timestamp and store all readings on the MySQL database
-    dbconfig = read_db_config()
-    conn = MySQLConnection(**dbconfig)
 
-    conn, curs = open_database_connection()
+    db_config = read_db_config()
+    conn = MySQLConnection(**db_config)
+    if conn.is_connected():
+        print('Connection established.')
+    else:
+        print('Connection failed.')
+
+        curs = conn.cursor()
+   # conn, curs = open_database_connection()
     try:
+# get latest timestamp value
         curs.execute("SELECT MAX(reading_time) FROM SensorData")
-    except mariadb.Error as error:
+    except conn.Error as error:
         print("Error: {}".format(error))
         pass
     last_timestamp = curs.fetchone()
@@ -149,22 +182,23 @@ def log_sensor_readings(all_curr_readings):
 
     for readings in all_curr_readings:
         try:
-            curs.execute(("UPDATE SensorData SET {} = {} WHERE timestamp = '{}'")
-                         .format(readings[0], readings[1], last_timestamp))
-        except mariadb.Error as error:
+            curs.execute("INSERT INTO SensorData (sensor, location, dblvalue_raw, reading_time) "
+                         "values ({}, {}, {}, {} )" .format(readings[0], readings[1], readings[2], last_timestamp))
+
+         #insert into SensorData (sensor, location, dblvalue_raw, reading_time)
+        #       values ('rpo', 'right closet', 28.97, '2020-07-24 12:00:00' )
+
+        except conn.Error as error:
             print("Error: {}".format(error))
             pass
 
-    close_database_connection(conn, curs)
 
-    return
-
-def read_sensors(all_curr_readings):
+def read_sensors(all_curr_readings, location):
     """
-    Read the sensor data from the sensors connected to the ADS1115
-    :return:
+    Read data from all sensors
+    :param all_curr_readings:
+    :param location:
     """
-
     ref_temp = 25
 
     # Get the readings from any 1-Wire temperature sensors. This sensor is submerged in the tank
@@ -178,7 +212,7 @@ def read_sensors(all_curr_readings):
                 except:
                     sensor_reading = 50
 
-                all_curr_readings.append([value["name"], sensor_reading])
+                all_curr_readings.append([value["name"], sensor_reading], location)
 
                 if value["is_ref"] is True:
                     ref_temp = sensor_reading
@@ -195,7 +229,7 @@ def read_sensors(all_curr_readings):
                     # chan = AnalogIn(ads, ADS.P0, ADS.P1)
                     # debug
                     #                print("{:>5}\t{:>5.3f}".format(chan.value, chan.voltage))
-                    all_curr_readings.append([value["name"], chan.value])
+                    all_curr_readings.append([value["name"], chan.value], location)
                 except:
                     if value["name"] == "ph":
                         sensor_reading = 0.0
@@ -212,7 +246,7 @@ def read_sensors(all_curr_readings):
                     # chan = AnalogIn(ads, ADS.P0, ADS.P1)
     # debug
     #                print("{:>5}\t{:>5.3f}".format(chan.value, chan.voltage))
-                    all_curr_readings.append([value["name"], chan.value])
+                    all_curr_readings.append([value["name"], chan.value], location)
                 except:
                     if value["name"] == "ec":
                         sensor_reading = 0.0
@@ -229,7 +263,7 @@ def read_sensors(all_curr_readings):
                     # chan = AnalogIn(ads, ADS.P0, ADS.P1)
                     # debug
                     #                print("{:>5}\t{:>5.3f}".format(chan.value, chan.voltage))
-                    all_curr_readings.append([value["name"], chan.value])
+                    all_curr_readings.append([value["name"], chan.value], location)
                 except:
                     if value["name"] == "orp":
                         sensor_reading = 0.0
@@ -251,7 +285,6 @@ def read_sensors(all_curr_readings):
             #
             #     all_curr_readings.append([value["name"], sensor_reading])
 
-    return
 
  def handler(signal_received, frame):
      """
@@ -346,7 +379,7 @@ def main():
         print('Running. Press CTRL-C to exit.')
 
         #   insert data from right closet into MySQL
-        SensorDataRowsRight = [('temperature', 'right closet', bme280.temperature, ''),
+        sensor_data_rows_right = [('temperature', 'right closet', bme280.temperature, ''),
                                ('humidity', 'right Closet', bme280.humidity, ''),
                                ('pressure', 'right closet', bme280.pressure, ''),
                                ('ph', 'right closet', 0.0, ''),
@@ -356,23 +389,28 @@ def main():
         #   query = "INSERT INTO SensorData(sensor, location, dblvalue_raw, value2) " \
         #           "VALUES(%s, %s, %d, %s)"
 
-        insert_SensorDataRows(SensorDataRowsRight)
+        insert_sensordatarows(sensor_data_rows_right)
 
         #   insert data from left closet into MySQL
-        SensorDataRowsLeft = [('temperature', 'left closet', bme280.temperature, ''),
+        sensor_data_rows_left = [('temperature', 'left closet', bme280.temperature, ''),
                               ('humidity', 'left closet', bme280.humidity, ''),
                               ('pressure', 'left closet', bme280.pressure, ''),
                               ('ph', 'left closet', 0.0, ''),
                               ('rpo', 'left closet', 0.0, ''),
                               ('ec', 'left closet', 0.0, '')]
 
-        insert_SensorDataRows(SensorDataRowsLeft)
+        insert_sensordatarows(sensor_data_rows_left)
 
-# Read all sensors connected to the ADS1115. Gravity sensors . 6 sensors attached
-        all_curr_readings = []
-        read_sensors(all_curr_readings)
+# Read sensors for 2 locations connected to the ADS1115. Gravity sensors . 6 sensors attached
+        all_curr_readings_right = []
+        all_curr_readings_left = []
+        read_sensors(all_curr_readings_right)
 #   update the database will all sensor readings
-        log_sensor_readings(all_curr_readings)
+        log_sensor_readings(all_curr_readings_right)
+
+        read_sensors(all_curr_readings_left)
+        #   update the database will all sensor readings
+        log_sensor_readings(all_curr_readings_left)
 
         time.sleep(sleep_timer)  # sleep for 10 minutes
 
