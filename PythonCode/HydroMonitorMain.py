@@ -8,40 +8,12 @@
 :return:
 """
 
-#import io
-#import fcntl
-#import mysql.connector as mariadb
-# import io
 import os
 import sys
 import time
 from collections import OrderedDict
 from signal import signal, SIGINT
 from sys import exit
-# import fcntl
-# import mysql.connector as mariadb
-from time import sleep
-
-import adafruit_ads1x15.ads1115 as ADS
-import adafruit_bme280
-import board
-import busio
-import digitalio
-from adafruit_ads1x15.analog_in import AnalogIn
-
-from PythonCode.python_mysql_dbconfig import *
-# import io
-# import fcntl
-# import mysql.connector as mariadb
-# import io
-import os
-import sys
-import time
-from collections import OrderedDict
-from signal import signal, SIGINT
-from sys import exit
-# import fcntl
-# import mysql.connector as mariadb
 from time import sleep
 
 import adafruit_ads1x15.ads1115 as ADS
@@ -71,10 +43,11 @@ bme280 = adafruit_bme280.Adafruit_BME280_SPI(spi, cs)
 
 sleep_timer = 600  # sensors are read every 10 minutes
 
-# not used
+
 def check_for_only_one_reference_temperature():
     """
     Verify that ony one temperature sensor is used for reference be the other sensors
+    NOT USED
     :return:
     """
     ref_check = 0
@@ -84,13 +57,21 @@ def check_for_only_one_reference_temperature():
             if value["sensor_type"] == "1_wire_temp":
                 if value["is_ref"] is True:
                     ref_check += 1
-         if ref_check > 1:
+                else:
+                    pass
+            else:
+                pass
+        else:
+            pass
+        if ref_check > 1:
             os.system('clear')
             print("\n\n                     !!!! WARNING !!!!\n\n"
                   "You can only have one Primary Temperature sensor, Please set the\n"
                   "Temperature sensor that is in the liquid you are testing to True\n"
                   "and the other to False\n\n                     !!!! WARNING !!!!\n\n")
             sys.exit()  # Stop program
+        else:
+            pass
     return
 
 # not used
@@ -154,6 +135,7 @@ def read_1_wire_temp(temp_num):
 
         return temp_curr
 
+
 def log_sensor_readings(all_curr_readings):
     """
     read and log each sensor if it is set to True in the sensors list
@@ -164,15 +146,16 @@ def log_sensor_readings(all_curr_readings):
 
     db_config = read_db_config()
     conn = MySQLConnection(**db_config)
+    curs = conn.cursor()
     if conn.is_connected():
         print('Connection established.')
     else:
         print('Connection failed.')
 
         curs = conn.cursor()
-   # conn, curs = open_database_connection()
+
     try:
-# get latest timestamp value
+        # get latest timestamp value
         curs.execute("SELECT MAX(reading_time) FROM SensorData")
     except conn.Error as error:
         print("Error: {}".format(error))
@@ -184,9 +167,9 @@ def log_sensor_readings(all_curr_readings):
         try:
             curs.execute("INSERT INTO SensorData (sensor, location, dblvalue_raw, reading_time) "
                          "values ({}, {}, {}, {} )" .format(readings[0], readings[1], readings[2], last_timestamp))
-
-         #insert into SensorData (sensor, location, dblvalue_raw, reading_time)
-        #       values ('rpo', 'right closet', 28.97, '2020-07-24 12:00:00' )
+# debug     print ("row values for insert".format(readings[0], readings[1], readings[2], last_timestamp))
+            # insert into SensorData (sensor, location, dblvalue_raw, reading_time)
+            #       values ('rpo', 'right closet', 28.97, '2020-07-24 12:00:00' )
 
         except conn.Error as error:
             print("Error: {}".format(error))
@@ -199,8 +182,6 @@ def read_sensors(all_curr_readings, location):
     :param all_curr_readings:
     :param location:
     """
-    ref_temp = 25
-
     # Get the readings from any 1-Wire temperature sensors. This sensor is submerged in the tank
 
     for key, value in sensors.items():
@@ -209,7 +190,7 @@ def read_sensors(all_curr_readings, location):
                 try:
                     sensor_reading = (round(float(read_1_wire_temp(key)),
                                             value["accuracy"]))
-                except:
+                except (sensor_reading == 0):
                     sensor_reading = 50
 
                 all_curr_readings.append([value["name"], sensor_reading], location)
@@ -230,7 +211,7 @@ def read_sensors(all_curr_readings, location):
                     # debug
                     #                print("{:>5}\t{:>5.3f}".format(chan.value, chan.voltage))
                     all_curr_readings.append([value["name"], chan.value], location)
-                except:
+                except(chan == []):
                     if value["name"] == "ph":
                         sensor_reading = 0.0
 
@@ -247,7 +228,7 @@ def read_sensors(all_curr_readings, location):
     # debug
     #                print("{:>5}\t{:>5.3f}".format(chan.value, chan.voltage))
                     all_curr_readings.append([value["name"], chan.value], location)
-                except:
+                except (chan == []):
                     if value["name"] == "ec":
                         sensor_reading = 0.0
 
@@ -264,37 +245,22 @@ def read_sensors(all_curr_readings, location):
                     # debug
                     #                print("{:>5}\t{:>5.3f}".format(chan.value, chan.voltage))
                     all_curr_readings.append([value["name"], chan.value], location)
-                except:
+
+                except (chan == []):
                     if value["name"] == "orp":
                         sensor_reading = 0.0
-
-            # Get the readings from any other Gravity sensors
-
-            # if value["sensor_type"] == "atlas_scientific":
-            #     device = atlas_i2c(value["i2c"])
-            #     # Set reference temperature value on the sensor
-            #     device.query("T," + str(ref_temp))
-            #     try:
-            #         sensor_reading = round(float(device.query("R")),
-            #                                value["accuracy"])
-            #     except:
-            #         if value["name"] == "ph":
-            #             sensor_reading = 2
-            #         elif value["name"] == "orp":
-            #             sensor_reading = 1000
-            #
-            #     all_curr_readings.append([value["name"], sensor_reading])
+                    else:
+                        pass
 
 
- def handler(signal_received, frame):
-     """
-    keyboard interrupt handler
-     :param signal_received:
-     :param frame:
-     """
-     # Handle any cleanup he    re
-     print('SIGINT or CTRL-C detected. Exiting gracefully')
-     exit(0)
+def handler(signal_received, frame):
+    """
+    Handle keyboard interruts
+    :param signal_received:
+    :param frame:
+    """
+    print('SIGINT or CTRL-C detected. Exiting gracefully')
+    exit(0)
 
 # Configuration Settings
 
@@ -314,56 +280,57 @@ def read_sensors(all_curr_readings, location):
 # AdaFruit BME288 temperature, pressure, humidity sensor added. This sensor uses SPI
 # AdaFruit, Optomax digital liquid level gauges added. These gauges are connected directly through GPIO
 
+
 sensors = OrderedDict([
-("temp_1_sub", {  # DS18B20 AdaFruit Submerged Temperature Sensor
-    "sensor_type": "1_wire_temp",
-    "name": "ds18b20_temp",
-    "is_connected": True,
-    "is_ref": False,
-    "ds18b20_file":
-    "/sys/bus/w1/devices/28-01157127dfff/w1_slave",
-    "accuracy": 1}),
+    ("temp_1_sub", {  # DS18B20 AdaFruit Submerged Temperature Sensor
+        "sensor_type": "1_wire_temp",
+        "name": "ds18b20_temp",
+        "is_connected": True,
+        "is_ref": False,
+        "ds18b20_file":
+        "/sys/bus/w1/devices/28-01157127dfff/w1_slave",
+        "accuracy": 1}),
 
-("bme288_sensor_1", {  # BME288 Temp/Humidity/Pressure Sensor
-   "sensor_type": "bme288_spi_temp_humid_press",
-   "name": "bme288_SPI",
-   "is_connected": True,
-   "is_ref": True,
-   "i2c": 0,
-   "accuracy": 1}),
+    ("bme288_sensor_1", {  # BME288 Temp/Humidity/Pressure Sensor
+       "sensor_type": "bme288_spi_temp_humid_press",
+       "name": "bme288_SPI",
+       "is_connected": True,
+       "is_ref": True,
+       "i2c": 0,
+       "accuracy": 1}),
 
-("gravity_sensor_2", {  # ORP Gravity Sensor
-   "sensor_type": "gravity_orp",
-   "name": "orp",
-   "is_connected": True,
-   "is_ref": False,
-   "i2c": 48,
-   "accuracy": 2}),
+    ("gravity_sensor_2", {  # ORP Gravity Sensor
+       "sensor_type": "gravity_orp",
+       "name": "orp",
+       "is_connected": True,
+       "is_ref": False,
+       "i2c": 48,
+       "accuracy": 2}),
 
-("gravity_sensor_3", {  # pH Gravity Sensor
-   "sensor_type": "gravity_ph",
-   "name": "ph",
-   "is_connected": True,
-   "is_ref": False,
-   "i2c": 48,
-   "accuracy": 0}),
+    ("gravity_sensor_3", {  # pH Gravity Sensor
+       "sensor_type": "gravity_ph",
+       "name": "ph",
+       "is_connected": True,
+       "is_ref": False,
+       "i2c": 48,
+       "accuracy": 0}),
 
-("gravity_sensor_4", {  # Gravity EC Sensor
-   "sensor_type": "gravity_ec",
-   "name": "ec",
-   "is_connected": True,
-   "is_ref": False,
-   "i2c": 48,
-   "accuracy": 0,
-   "ppm_multiplier": 0.67}),  # Convert EC to PPM
+    ("gravity_sensor_4", {  # Gravity EC Sensor
+       "sensor_type": "gravity_ec",
+       "name": "ec",
+       "is_connected": True,
+       "is_ref": False,
+       "i2c": 48,
+       "accuracy": 0,
+       "ppm_multiplier": 0.67}),  # Convert EC to PPM
 
-("optomax_sensor_1", {  # Optomax Digital Liquid Sensor
-   "sensor_type": "optomax_liquid_level",
-   "name": "liquid_lev",
-   "is_connected": True,
-   "is_ref": False,
-   "i2c": 0,
-   "accuracy": 0})])
+    ("optomax_sensor_1", {  # Optomax Digital Liquid Sensor
+       "sensor_type": "optomax_liquid_level",
+       "name": "liquid_lev",
+       "is_connected": True,
+       "is_ref": False,
+       "i2c": 0,
+       "accuracy": 0})])
 
 
 def main():
@@ -404,15 +371,17 @@ def main():
 # Read sensors for 2 locations connected to the ADS1115. Gravity sensors . 6 sensors attached
         all_curr_readings_right = []
         all_curr_readings_left = []
-        read_sensors(all_curr_readings_right)
+        read_sensors(all_curr_readings_right, 'right closet')
 #   update the database will all sensor readings
         log_sensor_readings(all_curr_readings_right)
 
-        read_sensors(all_curr_readings_left)
+        # read_sensors(all_curr_readings_left)
         #   update the database will all sensor readings
+        read_sensors(all_curr_readings_left, 'left closet')
         log_sensor_readings(all_curr_readings_left)
 
         time.sleep(sleep_timer)  # sleep for 10 minutes
+
 
 if __name__ == '__main__':
     main()
