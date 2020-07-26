@@ -348,10 +348,7 @@ def main():
         #   insert data from right closet into MySQL
         sensor_data_rows_right = [('temperature', 'right closet', bme280.temperature, ''),
                                ('humidity', 'right Closet', bme280.humidity, ''),
-                               ('pressure', 'right closet', bme280.pressure, ''),
-                               ('ph', 'right closet', 0.0, ''),
-                               ('rpo', 'right closet', 0.0, ''),
-                               ('ec', 'right closet', 0.0, '')]
+                               ('pressure', 'right closet', bme280.pressure, '')]
         # print (SensorDataRowsRight)
         #   query = "INSERT INTO SensorData(sensor, location, dblvalue_raw, value2) " \
         #           "VALUES(%s, %s, %d, %s)"
@@ -361,10 +358,7 @@ def main():
         #   insert data from left closet into MySQL
         sensor_data_rows_left = [('temperature', 'left closet', bme280.temperature, ''),
                               ('humidity', 'left closet', bme280.humidity, ''),
-                              ('pressure', 'left closet', bme280.pressure, ''),
-                              ('ph', 'left closet', 0.0, ''),
-                              ('rpo', 'left closet', 0.0, ''),
-                              ('ec', 'left closet', 0.0, '')]
+                              ('pressure', 'left closet', bme280.pressure, '')]
 
         insert_sensordatarows(sensor_data_rows_left)
 

@@ -4,7 +4,7 @@ from configparser import ConfigParser
 from mysql.connector import MySQLConnection, Error
 
 
-def read_db_config(filename='pihydropdata.ini', section='mysql'):
+def read_db_config(filename='../pihydropdata.ini', section='mysql'):
     """ Read database configuration file and return a dictionary object
     :param filename: name of the configuration file
     :param section: section of database configuration
@@ -58,7 +58,7 @@ def query_with_fetchall():
         dbconfig = read_db_config()
         conn = MySQLConnection(**dbconfig)
         cursor = conn.cursor()
-        cursor.execute("SELECT sensor, location, dblvalue_raw, value2, reading_time FROM SensorData")
+        cursor.execute("SELECT sensor, location, dblvalueraw, value2, reading_time FROM SensorData")
         rows = cursor.fetchall()
 
         print('Total Row(s):', cursor.rowcount)
@@ -120,7 +120,7 @@ def insert_sensordatarow(sensor, location, dblvalue_raw, value2):
     :param dblvalue_raw:
     :param value2:
     """
-    query = "INSERT INTO SensorData(sensor, location, dblvalue_raw, value2) " \
+    query = "INSERT INTO SensorData(sensor, location, dblvalueraw, value2) " \
             "VALUES(%s, %s, %d, %s)"
     args = (sensor, location, dblvalue_raw, value2)
 
@@ -146,12 +146,12 @@ def insert_sensordatarow(sensor, location, dblvalue_raw, value2):
 
 
 #   Insert multiple rows for all sensors
-def insert_sensordatarows(rows):
+def insert_sensordatarows(rows: object) -> object:
     """
     Insert statment for sensor row data - Multiple rows
     :param rows:
     """
-    query = "INSERT INTO SensorData(sensor, location, dblvalue_raw, value2) " \
+    query = "INSERT INTO SensorData(sensor, location, dblvalueraw, value2) " \
             "VALUES(%s, %s, %s, %s)"
 
     try:
@@ -176,7 +176,7 @@ def insert_sensordatarows(rows):
         print('Connection Closed.')
 
 
-def update_sensordatarows(id, sensor, location, dblvalue_raw, value2):
+def update_sensordatarows(id, sensor, location, dblvalueraw, value2):
     """
     update for multiple rows
     :param id:
