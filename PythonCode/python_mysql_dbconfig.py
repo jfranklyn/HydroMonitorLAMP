@@ -112,7 +112,7 @@ def query_with_fetchmany():
 
 
 #   Insert a single row
-def insert_sensordatarow(sensor, location, dblvalue_raw, value2):
+def insert_sensordatarow(sensor, location, dblvalueraw, value2):
     """
     Insert statment for sensor row data - One row
     :param sensor:
@@ -173,7 +173,7 @@ def insert_sensordatarows(rows: object) -> object:
     finally:
         cursor.close()
         conn.close()
-        print('Connection Closed.')
+        print('insert_sensordatarows - Connection Closed.')
 
 
 def update_sensordatarows(id, sensor, location, dblvalueraw, value2):
@@ -211,3 +211,4 @@ def update_sensordatarows(id, sensor, location, dblvalueraw, value2):
     finally:
         cursor.close()
         conn.close()
+        print('update_sensordatarows - Connection Closed.')

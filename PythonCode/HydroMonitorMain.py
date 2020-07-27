@@ -41,7 +41,7 @@ spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
 cs = digitalio.DigitalInOut(board.D5)
 bme280 = adafruit_bme280.Adafruit_BME280_SPI(spi, cs)
 
-sleep_timer = 600  # sensors are read every 10 minutes
+sleep_timer = 200  # sensors are read every 10 minutes
 
 
 def check_for_only_one_reference_temperature():
@@ -165,16 +165,20 @@ def log_sensor_readings(all_curr_readings):
 
     for readings in all_curr_readings:
         try:
-            curs.execute("INSERT INTO SensorData (sensor, location, dblvalue_raw, reading_time) "
-                         "values ({}, {}, {}, {} )" .format(readings[0], readings[1], readings[2], last_timestamp))
+            curs.execute("INSERT INTO SensorData (sensor, location, dblvalueraw, reading_time) "
+                         "values ('{}', '{}', {}, '{}' )" .format(readings[0], readings[2], readings[1], last_timestamp))
 # debug     print ("row values for insert".format(readings[0], readings[1], readings[2], last_timestamp))
-            # insert into SensorData (sensor, location, dblvalue_raw, reading_time)
+            # insert into SensorData (sensor, location, dblvalueraw, reading_time)
             #       values ('rpo', 'right closet', 28.97, '2020-07-24 12:00:00' )
 
-        except conn.Error as error:
-            print("Error: {}".format(error))
-            pass
+            conn.commit()
 
+        except Error as e:
+            print('Error:', e)
+
+    curs.close()
+    conn.close()
+    print('log_sensor_readings - Connection Closed.')
 
 def read_sensors(all_curr_readings, location):
     """
@@ -190,10 +194,11 @@ def read_sensors(all_curr_readings, location):
                 try:
                     sensor_reading = (round(float(read_1_wire_temp(key)),
                                             value["accuracy"]))
-                except (sensor_reading == 0):
+                    sensor_reading = 0
+                except :
                     sensor_reading = 50
 
-                all_curr_readings.append([value["name"], sensor_reading], location)
+                all_curr_readings.append([value["name"], sensor_reading, location])
 
                 if value["is_ref"] is True:
                     ref_temp = sensor_reading
@@ -201,7 +206,7 @@ def read_sensors(all_curr_readings, location):
             # Get the readings from any Gravity pH sensors
             # ADS channel P0
 
-            if value["sensor_type"] == "gravity_ec":
+            if value["sensor_type"] == "gravity_ph":
                 # Create single-ended input on channel 0
                 try:
                     chan = AnalogIn(ads, ADS.P0)
@@ -210,7 +215,7 @@ def read_sensors(all_curr_readings, location):
                     # chan = AnalogIn(ads, ADS.P0, ADS.P1)
                     # debug
                     #                print("{:>5}\t{:>5.3f}".format(chan.value, chan.voltage))
-                    all_curr_readings.append([value["name"], chan.value], location)
+                    all_curr_readings.append([value["name"], chan.voltage, location])
                 except(chan == []):
                     if value["name"] == "ph":
                         sensor_reading = 0.0
@@ -227,13 +232,13 @@ def read_sensors(all_curr_readings, location):
                     # chan = AnalogIn(ads, ADS.P0, ADS.P1)
     # debug
     #                print("{:>5}\t{:>5.3f}".format(chan.value, chan.voltage))
-                    all_curr_readings.append([value["name"], chan.value], location)
+                    all_curr_readings.append([value["name"], chan.voltage, location])
                 except (chan == []):
                     if value["name"] == "ec":
                         sensor_reading = 0.0
 
             # Get the readings from any Gravity ORP sensors
-            # ADS channel P2
+            # ADS channel P2. Measured in milli-volts
 
             if value["sensor_type"] == "gravity_orp":
                 # Create single-ended input on channel 0
@@ -244,7 +249,7 @@ def read_sensors(all_curr_readings, location):
                     # chan = AnalogIn(ads, ADS.P0, ADS.P1)
                     # debug
                     #                print("{:>5}\t{:>5.3f}".format(chan.value, chan.voltage))
-                    all_curr_readings.append([value["name"], chan.value], location)
+                    all_curr_readings.append([value["name"], chan.voltage, location])
 
                 except (chan == []):
                     if value["name"] == "orp":
@@ -284,7 +289,7 @@ def handler(signal_received, frame):
 sensors = OrderedDict([
     ("temp_1_sub", {  # DS18B20 AdaFruit Submerged Temperature Sensor
         "sensor_type": "1_wire_temp",
-        "name": "ds18b20_temp",
+        "name": "subm_temp",
         "is_connected": True,
         "is_ref": False,
         "ds18b20_file":
@@ -365,13 +370,13 @@ def main():
 # Read sensors for 2 locations connected to the ADS1115. Gravity sensors . 6 sensors attached
         all_curr_readings_right = []
         all_curr_readings_left = []
-        read_sensors(all_curr_readings_right, 'right closet')
+        read_sensors(all_curr_readings_right, "right closet")
 #   update the database will all sensor readings
         log_sensor_readings(all_curr_readings_right)
 
         # read_sensors(all_curr_readings_left)
         #   update the database will all sensor readings
-        read_sensors(all_curr_readings_left, 'left closet')
+        read_sensors(all_curr_readings_left, "left closet")
         log_sensor_readings(all_curr_readings_left)
 
         time.sleep(sleep_timer)  # sleep for 10 minutes
