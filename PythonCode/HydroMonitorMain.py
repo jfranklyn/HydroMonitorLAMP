@@ -4,7 +4,8 @@
    BME280 python 3.7 code
    output written to mysql database pihydropdata
    changed code to use SPI instead of i2c for BME280
-   ph, rpo, ec, water level sensors will be added
+   Gravity ph, rpo, ec, water level sensors added
+   AdaFruit DS18B20 waterproof, temperature sensor added
 :return:
 """
 
@@ -21,10 +22,16 @@ import adafruit_bme280
 import board
 import busio
 import digitalio
+from DFRobot_ADS1115 import ADS1115
+from DFRobot_EC import DFRobot_EC
+from DFRobot_PH import DFRobot_PH
 from adafruit_ads1x15.analog_in import AnalogIn
 
 from PythonCode.python_mysql_dbconfig import *
 
+ads1115 = ADS1115()
+ph = DFRobot_PH()
+ec = DFRobot_EC()
 # initialize all objects
 
 # Load Raspberry Pi Drivers for AdaFruit 1-Wire Temperature Sensor
@@ -73,6 +80,7 @@ def check_for_only_one_reference_temperature():
         else:
             pass
     return
+
 
 # not used
 # def remove_unused_sensors():
@@ -166,8 +174,8 @@ def log_sensor_readings(all_curr_readings):
     for readings in all_curr_readings:
         try:
             curs.execute("INSERT INTO SensorData (sensor, location, dblvalueraw, reading_time) "
-                         "values ('{}', '{}', {}, '{}' )" .format(readings[0], readings[2], readings[1], last_timestamp))
-# debug     print ("row values for insert".format(readings[0], readings[1], readings[2], last_timestamp))
+                         "values ('{}', '{}', {}, '{}' )".format(readings[0], readings[2], readings[1], last_timestamp))
+            # debug     print ("row values for insert".format(readings[0], readings[1], readings[2], last_timestamp))
             # insert into SensorData (sensor, location, dblvalueraw, reading_time)
             #       values ('rpo', 'right closet', 28.97, '2020-07-24 12:00:00' )
 
@@ -179,6 +187,7 @@ def log_sensor_readings(all_curr_readings):
     curs.close()
     conn.close()
     print('log_sensor_readings - Connection Closed.')
+
 
 def read_sensors(all_curr_readings, location):
     """
@@ -194,9 +203,8 @@ def read_sensors(all_curr_readings, location):
                 try:
                     sensor_reading = (round(float(read_1_wire_temp(key)),
                                             value["accuracy"]))
+                except:
                     sensor_reading = 0
-                except :
-                    sensor_reading = 50
 
                 all_curr_readings.append([value["name"], sensor_reading, location])
 
@@ -215,7 +223,7 @@ def read_sensors(all_curr_readings, location):
                     # chan = AnalogIn(ads, ADS.P0, ADS.P1)
                     # debug
                     #                print("{:>5}\t{:>5.3f}".format(chan.value, chan.voltage))
-                    all_curr_readings.append([value["name"], chan.voltage, location])
+                    all_curr_readings.append([value["name"], chan.value, location])
                 except(chan == []):
                     if value["name"] == "ph":
                         sensor_reading = 0.0
@@ -230,9 +238,9 @@ def read_sensors(all_curr_readings, location):
 
                     # Create differential input between channel 0 and 1
                     # chan = AnalogIn(ads, ADS.P0, ADS.P1)
-    # debug
-    #                print("{:>5}\t{:>5.3f}".format(chan.value, chan.voltage))
-                    all_curr_readings.append([value["name"], chan.voltage, location])
+                    # debug
+                    #                print("{:>5}\t{:>5.3f}".format(chan.value, chan.voltage))
+                    all_curr_readings.append([value["name"], chan.value, location])
                 except (chan == []):
                     if value["name"] == "ec":
                         sensor_reading = 0.0
@@ -249,7 +257,7 @@ def read_sensors(all_curr_readings, location):
                     # chan = AnalogIn(ads, ADS.P0, ADS.P1)
                     # debug
                     #                print("{:>5}\t{:>5.3f}".format(chan.value, chan.voltage))
-                    all_curr_readings.append([value["name"], chan.voltage, location])
+                    all_curr_readings.append([value["name"], chan.value, location])
 
                 except (chan == []):
                     if value["name"] == "orp":
@@ -266,6 +274,7 @@ def handler(signal_received, frame):
     """
     print('SIGINT or CTRL-C detected. Exiting gracefully')
     exit(0)
+
 
 # Configuration Settings
 
@@ -291,51 +300,61 @@ sensors = OrderedDict([
         "sensor_type": "1_wire_temp",
         "name": "subm_temp",
         "is_connected": True,
-        "is_ref": False,
+        "is_ref": True,
         "ds18b20_file":
-        "/sys/bus/w1/devices/28-01157127dfff/w1_slave",
+        # Hard coded for this device. This will change if another 1-wire device is added
+            "/sys/bus/w1/devices/28-1b202933bcff/w1_slave",
         "accuracy": 1}),
 
     ("bme288_sensor_1", {  # BME288 Temp/Humidity/Pressure Sensor
-       "sensor_type": "bme288_spi_temp_humid_press",
-       "name": "bme288_SPI",
-       "is_connected": True,
-       "is_ref": True,
-       "i2c": 0,
-       "accuracy": 1}),
+        "sensor_type": "bme288_spi_temp_humid_press",
+        "name": "bme288_SPI",
+        "is_connected": True,
+        "is_ref": True,
+        "i2c": 0,
+        "accuracy": 1}),
 
     ("gravity_sensor_2", {  # ORP Gravity Sensor
-       "sensor_type": "gravity_orp",
-       "name": "orp",
-       "is_connected": True,
-       "is_ref": False,
-       "i2c": 48,
-       "accuracy": 2}),
+        "sensor_type": "gravity_orp",
+        "name": "orp",
+        "is_connected": True,
+        "is_ref": False,
+        "i2c": 48,
+        "accuracy": 2}),
 
     ("gravity_sensor_3", {  # pH Gravity Sensor
-       "sensor_type": "gravity_ph",
-       "name": "ph",
-       "is_connected": True,
-       "is_ref": False,
-       "i2c": 48,
-       "accuracy": 0}),
+        "sensor_type": "gravity_ph",
+        "name": "ph",
+        "is_connected": True,
+        "is_ref": False,
+        "i2c": 48,
+        "accuracy": 0}),
 
     ("gravity_sensor_4", {  # Gravity EC Sensor
-       "sensor_type": "gravity_ec",
-       "name": "ec",
-       "is_connected": True,
-       "is_ref": False,
-       "i2c": 48,
-       "accuracy": 0,
-       "ppm_multiplier": 0.67}),  # Convert EC to PPM
+        "sensor_type": "gravity_ec",
+        "name": "ec",
+        "is_connected": True,
+        "is_ref": False,
+        "i2c": 48,
+        "accuracy": 0,
+        "ppm_multiplier": 0.67}),  # Convert EC to PPM
 
     ("optomax_sensor_1", {  # Optomax Digital Liquid Sensor
-       "sensor_type": "optomax_liquid_level",
-       "name": "liquid_lev",
-       "is_connected": True,
-       "is_ref": False,
-       "i2c": 0,
-       "accuracy": 0})])
+        "sensor_type": "optomax_liquid_level",
+        "name": "liquid_lev",
+        "is_connected": True,
+        "is_ref": False,
+        "i2c": 0,
+        "accuracy": 0})])
+
+# Sets the gain and input voltage range for the ph and ec sensors.
+# example: ads1115.setGain(ADS1115_REG_CONFIG_PGA_6_144V)
+ADS1115_REG_CONFIG_PGA_6_144V = 0x00 # 6.144V range = Gain 2/3
+ADS1115_REG_CONFIG_PGA_4_096V = 0x02 # 4.096V range = Gain 1
+ADS1115_REG_CONFIG_PGA_2_048V = 0x04 # 2.048V range = Gain 2 (default)
+ADS1115_REG_CONFIG_PGA_1_024V = 0x06 # 1.024V range = Gain 4
+ADS1115_REG_CONFIG_PGA_0_512V = 0x08 # 0.512V range = Gain 8
+ADS1115_REG_CONFIG_PGA_0_256V = 0x0A # 0.256V range = Gain 16
 
 
 def main():
@@ -344,16 +363,16 @@ def main():
     """
     # change this to match the location's pressure (hPa) at sea level
     bme280.sea_level_pressure = 1013.25
-# initialize all objects
-#    init()
+    # initialize all objects
+    #    init()
     while True:
         signal(SIGINT, handler)
         print('Running. Press CTRL-C to exit.')
 
         #   insert data from right closet into MySQL
         sensor_data_rows_right = [('temperature', 'right closet', bme280.temperature, ''),
-                               ('humidity', 'right Closet', bme280.humidity, ''),
-                               ('pressure', 'right closet', bme280.pressure, '')]
+                                  ('humidity', 'right Closet', bme280.humidity, ''),
+                                  ('pressure', 'right closet', bme280.pressure, '')]
         # print (SensorDataRowsRight)
         #   query = "INSERT INTO SensorData(sensor, location, dblvalue_raw, value2) " \
         #           "VALUES(%s, %s, %d, %s)"
@@ -362,16 +381,16 @@ def main():
 
         #   insert data from left closet into MySQL
         sensor_data_rows_left = [('temperature', 'left closet', bme280.temperature, ''),
-                              ('humidity', 'left closet', bme280.humidity, ''),
-                              ('pressure', 'left closet', bme280.pressure, '')]
+                                 ('humidity', 'left closet', bme280.humidity, ''),
+                                 ('pressure', 'left closet', bme280.pressure, '')]
 
         insert_sensordatarows(sensor_data_rows_left)
 
-# Read sensors for 2 locations connected to the ADS1115. Gravity sensors . 6 sensors attached
+        # Read sensors for 2 locations connected to the ADS1115. Gravity sensors . 6 sensors attached
         all_curr_readings_right = []
         all_curr_readings_left = []
         read_sensors(all_curr_readings_right, "right closet")
-#   update the database will all sensor readings
+        #   update the database will all sensor readings
         log_sensor_readings(all_curr_readings_right)
 
         # read_sensors(all_curr_readings_left)
