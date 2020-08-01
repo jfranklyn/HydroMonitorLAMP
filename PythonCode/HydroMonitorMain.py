@@ -10,29 +10,30 @@
 """
 
 import os
-# import sys
-# import time
+import sys
+import time
 from collections import OrderedDict
 from signal import signal, SIGINT
-from sys import exit
-from time import sleep
 
 import adafruit_ads1x15.ads1115 as ADS
 import adafruit_bme280
 import board
 import busio
 import digitalio
-from DFRobot_ADS1115 import ADS1115
-from DFRobot_EC import DFRobot_EC
-from DFRobot_PH import DFRobot_PH
 from adafruit_ads1x15.analog_in import AnalogIn
 
+from PythonCode.DFRobot_ADS1115 import ADS1115
+from PythonCode.DFRobot_EC import DFRobot_EC
+from PythonCode.DFRobot_PH import DFRobot_PH
 from PythonCode.python_mysql_dbconfig import *
 
+# from sys import exit
+# from time import sleep
+
+# initialize all objects
 ads1115 = ADS1115()
 ph = DFRobot_PH()
 ec = DFRobot_EC()
-# initialize all objects
 
 # Load Raspberry Pi Drivers for AdaFruit 1-Wire Temperature Sensor
 os.system('modprobe w1-gpio')
@@ -42,6 +43,7 @@ os.system('modprobe w1-therm')
 i2c = busio.I2C(board.SCL, board.SDA)
 
 ads = ADS.ADS1115(i2c)
+ads1115.setAddr_ADS1115(0x48)
 
 # Create library object using SPI port for BME280
 spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
@@ -130,7 +132,8 @@ def read_1_wire_temp(temp_num):
     lines = read_1_wire_temp_raw(temp_num)
 
     while lines[0].strip()[-3:] != 'YES':
-        sleep(0.2)
+        # noinspection PyUnresolvedReferences
+        time.sleep(0.2)
         lines = read_1_wire_temp_raw(temp_num)
     equals_pos = lines[1].find('t=')
 
@@ -203,8 +206,9 @@ def read_sensors(all_curr_readings, location):
                 try:
                     sensor_reading = (round(float(read_1_wire_temp(key)),
                                             value["accuracy"]))
-                except:
+                except (sensor_reading == 0):
                     sensor_reading = 0
+                    ref_temp = 25
 
                 all_curr_readings.append([value["name"], sensor_reading, location])
 
@@ -217,16 +221,20 @@ def read_sensors(all_curr_readings, location):
             if value["sensor_type"] == "gravity_ph":
                 # Create single-ended input on channel 0
                 try:
-                    chan = AnalogIn(ads, ADS.P0)
-
+                    # chan = AnalogIn(ads, ADS.P0)
+                    # set the gain value and then read the sensor voltage
+                    ads1115.setGain(ADS1115_REG_CONFIG_PGA_6_144V)
+                    adc0 = ads1115.readVoltage(0)
                     # Create differential input between channel 0 and 1
                     # chan = AnalogIn(ads, ADS.P0, ADS.P1)
                     # debug
                     #                print("{:>5}\t{:>5.3f}".format(chan.value, chan.voltage))
-                    all_curr_readings.append([value["name"], chan.value, location])
-                except(chan == []):
-                    if value["name"] == "ph":
-                        sensor_reading = 0.0
+                    # get ph compensated value based on submerged temperature value
+                    ph_comp = ph.readPH(adc0['r'], ref_temp)
+                    all_curr_readings.append([value["name"], ph_comp, location])
+
+                except(ph_comp == 0):
+                    sensor_reading = 0.0
 
             # Get the readings from any Gravity Electrical Conductivity sensors
             # ADS channel P1
@@ -234,16 +242,14 @@ def read_sensors(all_curr_readings, location):
             if value["sensor_type"] == "gravity_ec":
                 # Create single-ended input on channel 0
                 try:
-                    chan = AnalogIn(ads, ADS.P1)
+                    # chan = AnalogIn(ads, ADS.P1)
+                    ads1115.setGain(ADS1115_REG_CONFIG_PGA_6_144V)
+                    adc1 = ads1115.readVoltage(1)
+                    ec_comp = ec.readEC(adc1['r'], ref_temp)
+                    all_curr_readings.append([value["name"], ec_comp, location])
 
-                    # Create differential input between channel 0 and 1
-                    # chan = AnalogIn(ads, ADS.P0, ADS.P1)
-                    # debug
-                    #                print("{:>5}\t{:>5.3f}".format(chan.value, chan.voltage))
-                    all_curr_readings.append([value["name"], chan.value, location])
-                except (chan == []):
-                    if value["name"] == "ec":
-                        sensor_reading = 0.0
+                except (ec_comp == 0):
+                    sensor_reading = 0.0
 
             # Get the readings from any Gravity ORP sensors
             # ADS channel P2. Measured in milli-volts
@@ -252,18 +258,14 @@ def read_sensors(all_curr_readings, location):
                 # Create single-ended input on channel 0
                 try:
                     chan = AnalogIn(ads, ADS.P2)
-
-                    # Create differential input between channel 0 and 1
-                    # chan = AnalogIn(ads, ADS.P0, ADS.P1)
                     # debug
                     #                print("{:>5}\t{:>5.3f}".format(chan.value, chan.voltage))
                     all_curr_readings.append([value["name"], chan.value, location])
 
                 except (chan == []):
-                    if value["name"] == "orp":
-                        sensor_reading = 0.0
-                    else:
-                        pass
+                    sensor_reading = 0.0
+            else:
+                pass
 
 
 def handler(signal_received, frame):
