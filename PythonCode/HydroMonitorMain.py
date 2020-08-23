@@ -6,6 +6,7 @@
    changed code to use SPI instead of i2c for BME280
    Gravity ph, rpo, ec, water level sensors added
    AdaFruit DS18B20 waterproof, temperature sensor added
+   Optomax digital liquid sensor added
 :return:
 """
 
@@ -20,12 +21,16 @@ import adafruit_bme280
 import board
 import busio
 import digitalio
+import RPi.GPIO as GPIO
 from adafruit_ads1x15.analog_in import AnalogIn
 
 from PythonCode.DFRobot_ADS1115 import ADS1115
 from PythonCode.DFRobot_EC import DFRobot_EC
 from PythonCode.DFRobot_PH import DFRobot_PH
 from PythonCode.python_mysql_dbconfig import *
+
+# Configures pin numbering to Board reference
+GPIO.setmode(GPIO.BOARD)
 
 # from sys import exit
 # from time import sleep
@@ -34,6 +39,9 @@ from PythonCode.python_mysql_dbconfig import *
 ads1115 = ADS1115()
 ph = DFRobot_PH()
 ec = DFRobot_EC()
+# Set GPIO pin to input and activate pull_down walter level sensor to reference pin to ground
+gpio_pin = 12
+GPIO.setup(gpio_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
 # Load Raspberry Pi Drivers for AdaFruit 1-Wire Temperature Sensor
 os.system('modprobe w1-gpio')
@@ -82,28 +90,6 @@ def check_for_only_one_reference_temperature():
         else:
             pass
     return
-
-
-# not used
-# def remove_unused_sensors():
-#     """
-#     Used to remove unused sensors from the database
-#     :return:
-#     """
-#     conn, curs = open_database_connection()
-#
-#     for key, value in list(sensors.items()):
-#         if value["is_connected"] is False:
-#             try:
-#                 curs.execute("ALTER TABLE sensors DROP {};"
-#                              .format(value["name"]))
-#             except mariadb.Error as error:
-#                 print("Error: {}".format(error))
-#                 pass
-#
-#     close_database_connection(conn, curs)
-#
-#     return
 
 
 # Read in the data from the Submerged Temp Sensor file
@@ -264,6 +250,22 @@ def read_sensors(all_curr_readings, location):
 
                 except (chan == []):
                     sensor_reading = 0.0
+
+            # Get the readings from Optomax water level sensor
+
+            if value["sensor_type"] == "optomax_digital_liquid_sensor":
+                try:
+                    if GPIO.input(gpio_pin):  
+                        # debug
+                        #   print("GPIO pin 12 is: ", GPIO.input(gpio_pin))
+                        
+                        all_curr_readings.append([value["name"], "Water Level OK", location])
+                    else:
+                        all_curr_readings.append([value["name"], "Water Level LOW", location])                        
+
+                except (GPIO.UNKNOWN()):
+                        print ("GPIO.UNKNOWN this should never happen")
+                    
             else:
                 pass
 
@@ -312,6 +314,14 @@ sensors = OrderedDict([
     ("bme288_sensor_1", {  # BME288 Temp/Humidity/Pressure Sensor
         "sensor_type": "bme288_spi_temp_humid_press",
         "name": "bme288_SPI",
+        "is_connected": True,
+        "is_ref": True,
+        "i2c": 0,
+        "accuracy": 1}),
+
+    ("optomax_level_sensor", {  # Optomax Digital Liquid Sensor
+        "sensor_type": "optomax_digital_liquid_sensor",
+        "name": "optomax_SPI",
         "is_connected": True,
         "is_ref": True,
         "i2c": 0,
