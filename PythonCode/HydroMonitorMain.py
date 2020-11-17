@@ -24,13 +24,13 @@ import digitalio
 import RPi.GPIO as GPIO
 from adafruit_ads1x15.analog_in import AnalogIn
 
-from PythonCode.DFRobot_ADS1115 import ADS1115
-from PythonCode.DFRobot_EC import DFRobot_EC
-from PythonCode.DFRobot_PH import DFRobot_PH
-from PythonCode.python_mysql_dbconfig import *
+from DFRobot_ADS1115 import ADS1115
+from DFRobot_EC import DFRobot_EC
+from DFRobot_PH import DFRobot_PH
+from python_influxdb_dbconfig import *
 
 # Configures pin numbering to Board reference
-GPIO.setmode(GPIO.BOARD)
+#GPIO.setmode(GPIO.BOARD)
 
 # from sys import exit
 # from time import sleep
@@ -55,7 +55,7 @@ ads1115.setAddr_ADS1115(0x48)
 
 # Create library object using SPI port for BME280
 spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
-cs = digitalio.DigitalInOut(board.D5)
+cs = digitalio.DigitalInOut(board.D7)
 bme280 = adafruit_bme280.Adafruit_BME280_SPI(spi, cs)
 
 sleep_timer = 200  # sensors are read every 10 minutes
@@ -140,25 +140,21 @@ def log_sensor_readings(all_curr_readings):
     :return:
     """
     # Create a timestamp and store all readings on the MySQL database
-
     db_config = read_db_config()
-    conn = MySQLConnection(**db_config)
-    curs = conn.cursor()
-    if conn.is_connected():
-        print('Connection established.')
-    else:
+    client = influxdb_client.InfluxDBClient(
+        url=url,
+        token=token,
+        org=org
+    )
+    if client is None:
         print('Connection failed.')
+    else:
+        print('Connection established.')
 
-        curs = conn.cursor()
-
-    try:
-        # get latest timestamp value
-        curs.execute("SELECT MAX(reading_time) FROM SensorData")
-    except conn.Error as error:
-        print("Error: {}".format(error))
-        pass
-    last_timestamp = curs.fetchone()
-    last_timestamp = last_timestamp[0].strftime('%Y-%m-%d %H:%M:%S')
+    write_api = client.write_api(write_options=SYNCHRONOUS)
+# write a point or row to influxdb
+    p = influxdb_client.Point("SendorData").tag("location", "sensor").field("value", 25.3)
+    write_api.write(bucket=bucket, org=org, record=p)    
 
     for readings in all_curr_readings:
         try:
