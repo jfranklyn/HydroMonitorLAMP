@@ -32,16 +32,16 @@ from python_influxdb_dbconfig import *
 # Configures pin numbering to Board reference
 #GPIO.setmode(GPIO.BOARD)
 
-# from sys import exit
-# from time import sleep
-
 # initialize all objects
 ads1115 = ADS1115()
 ph = DFRobot_PH()
 ec = DFRobot_EC()
-# Set GPIO pin to input and activate pull_down walter level sensor to reference pin to ground
-gpio_pin = 12
-GPIO.setup(gpio_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+
+# Set GPIO pins to input and activate pull_down walter level sensor to reference pin to ground
+gpio_pin_right = 5
+GPIO.setup(gpio_pin_right, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+gpio_pin_left = 6
+GPIO.setup(gpio_pin_left, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
 # Load Raspberry Pi Drivers for AdaFruit 1-Wire Temperature Sensor
 os.system('modprobe w1-gpio')
@@ -164,13 +164,9 @@ def log_sensor_readings(all_curr_readings):
             # insert into SensorData (sensor, location, dblvalueraw, reading_time)
             #       values ('rpo', 'right closet', 28.97, '2020-07-24 12:00:00' )
 
-            conn.commit()
-
         except Error as e:
             print('Error:', e)
 
-    curs.close()
-    conn.close()
     print('log_sensor_readings - Connection Closed.')
 
 

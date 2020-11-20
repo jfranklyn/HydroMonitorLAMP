@@ -1,9 +1,18 @@
+#!/usr/bin/env python3
 """
  11/17/20 changed code to use influxdb instead of mysql
+ #   API key for Influxdb
+# curl -H "Authorization: Bearer eyJrIjoiN2M2UkVJcmJrR3IwcENKbEt3VkE3cEZjS0NjUkZjS2IiLCJuIjoicGloeWRyb3AiLCJpZCI6MX0=" http://localhost:3000/api/dashboards/home
+# insert example for Influxdb: insert SensorData,sensor=sensor,location=location sensor="rpo",location="left",value=88.88
+# bucket = database = HydroSensorData
+# table = measure = SensorData
+# key value pairs = sensor, location
+# field value pairs = value
+# timestamp is included with every point = row
 """ 
-#!/usr/bin/env python3
+
 from configparser import ConfigParser
-import influxdb_client
+from influxdb_client import WritePrecision, InfluxDBClient, Point
 from influxdb_client.client.write_api import SYNCHRONOUS
 
 def read_db_config(filename='../pihydropdata.ini', section='influxdb'):
@@ -36,60 +45,76 @@ def insert_sensordatarow(sensor, location, dblvalueraw, value2):
     :param dblvalue_raw:
     :param value2:
     """
-    query = "INSERT INTO SensorData(sensor, location, dblvalueraw, value2) " \
-            "VALUES(%s, %s, %d, %s)"
-    args = (sensor, location, dblvalue_raw, value2)
+#    query = "INSERT INTO SensorData(sensor, location, dblvalueraw, value2) " \
+#            "VALUES(%s, %s, %d, %s)"
+#    args = (sensor, location, dblvalue_raw, value2)
 
     try:
-        db_config = read_db_config()
-        conn = MySQLConnection(**db_config)
+            # connect to influxdb and insert a point = row
+            db_config = read_db_config()
+            client = influxdb_client.InfluxDBClient(
+            url=url,
+            token=token,
+            org=org
+            )
+    if client is None:
+        print('Connection failed.')
+    else:
+        print('Connection established.')
 
-        cursor = conn.cursor()
-        cursor.execute(query, args)
+    write_api = client.write_api(write_options=SYNCHRONOUS)
+# write a point or row to influxdb
+    p = influxdb_client.Point("SendorData").tag("location", location).tag("sensor", sensor).field("value", dblvalueraw).time(datetime.now(), WritePrecision.MS)
+    write_api.write(bucket=bucket, org=org, record=p)
 
-        if cursor.lastrowid:
-            print('last insert id', cursor.lastrowid)
-        else:
-            print('last insert id not found')
-
-        conn.commit()
-    except Error as error:
-        print(error)
+    except client is None:
+        print("Connection Failed with error: " StandardError)
 
     finally:
-        cursor.close()
-        conn.close()
-
+        """
+        Close client
+        """
+        client.__del__()
 
 #   Insert multiple rows for all sensors
 def insert_sensordatarows(rows: object) -> object:
     """
-    Insert statment for sensor row data - Multiple rows
-    :param rows:
+    Insert statment for sensor row data - One row
+    :param sensor:
+    :param location:
+    :param dblvalue_raw:
+    :param value2:
     """
-    query = "INSERT INTO SensorData(sensor, location, dblvalueraw, value2) " \
-            "VALUES(%s, %s, %s, %s)"
+#    query = "INSERT INTO SensorData(sensor, location, dblvalueraw, value2) " \
+#            "VALUES(%s, %s, %d, %s)"
+#    args = (sensor, location, dblvalue_raw, value2)
 
     try:
-        print('Connecting to MySQL database:pihydropdata')
-        db_config = read_db_config()
-        conn = MySQLConnection(**db_config)
-        if conn.is_connected():
-            print('Connection established.')
-        else:
-            print('Connection failed.')
+            # connect to influxdb and insert a point = row
+            db_config = read_db_config()
+            client = influxdb_client.InfluxDBClient(
+            url=url,
+            token=token,
+            org=org
+            )
+    if client is None:
+        print('Connection failed.')
+    else:
+        print('Connection established.')
 
-        cursor = conn.cursor()
-        cursor.executemany(query, rows)
+    write_api = client.write_api(write_options=SYNCHRONOUS)
+# write a point or row to influxdb
+    p = influxdb_client.Point("SendorData").tag("location", location).tag("sensor", sensor).field("value", dblvalueraw).time(datetime.now(), WritePrecision.MS)
+    write_api.write(bucket=bucket, org=org, record=p)
 
-        conn.commit()
-    except Error as e:
-        print('Error:', e)
+    except client is None:
+        print("Connection Failed with error: " StandardError)
 
     finally:
-        cursor.close()
-        conn.close()
-        print('insert_sensordatarows - Connection Closed.')
+        """
+        Close client
+        """
+        client.__del__()
 
 
 def update_sensordatarows(id, sensor, location, dblvalueraw, value2):
