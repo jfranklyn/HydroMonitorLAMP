@@ -9,9 +9,12 @@
 # key value pairs = sensor, location
 # field value pairs = value
 # timestamp is included with every point = row
+influx CLI query example:
+influx -execute 'SELECT * FROM "SensorData"' -database="HydroSensorData" -precision=rfc3339
 """ 
 
 from configparser import ConfigParser
+import influxdb_client
 from influxdb_client import WritePrecision, InfluxDBClient, Point
 from influxdb_client.client.write_api import SYNCHRONOUS
 
@@ -50,25 +53,28 @@ def insert_sensordatarow(sensor, location, dblvalueraw, value2):
 #    args = (sensor, location, dblvalue_raw, value2)
 
     try:
-            # connect to influxdb and insert a point = row
-            db_config = read_db_config()
-            client = influxdb_client.InfluxDBClient(
-            url=url,
-            token=token,
-            org=org
-            )
-    if client is None:
-        print('Connection failed.')
-    else:
-        print('Connection established.')
+        # connect to influxdb and insert a point = row
+        db_config = read_db_config()
+        #print(db_config)
+        client = influxdb_client.InfluxDBClient(
+        url=db_config.get("url"),
+        token=db_config.get("token"),
+        org=db_config.get("org")
+        )
+        
+        if client is None:
+            
+            print('Connection failed.')
+        else:
+            print('Connection established.')
 
-    write_api = client.write_api(write_options=SYNCHRONOUS)
-# write a point or row to influxdb
-    p = influxdb_client.Point("SendorData").tag("location", location).tag("sensor", sensor).field("value", dblvalueraw).time(datetime.now(), WritePrecision.MS)
-    write_api.write(bucket=bucket, org=org, record=p)
+        write_api = client.write_api(write_options=SYNCHRONOUS)
+        # write a point or row to influxdb
+        p = influxdb_client.Point("SendorData").tag("location", location).tag("sensor", sensor).field("value", dblvalueraw).time(datetime.now(), WritePrecision.MS)
+        write_api.write(bucket=bucket, org=org, record=p)
 
     except client is None:
-        print("Connection Failed with error: " StandardError)
+        print("Connection Failed with error: " )
 
     finally:
         """
@@ -90,25 +96,27 @@ def insert_sensordatarows(rows: object) -> object:
 #    args = (sensor, location, dblvalue_raw, value2)
 
     try:
-            # connect to influxdb and insert a point = row
-            db_config = read_db_config()
-            client = influxdb_client.InfluxDBClient(
-            url=url,
-            token=token,
-            org=org
-            )
-    if client is None:
-        print('Connection failed.')
-    else:
-        print('Connection established.')
+        # connect to influxdb and insert a point = row
+        db_config = read_db_config()
+        #print(db_config)
+        client = influxdb_client.InfluxDBClient(
+        url=db_config.get("url"),
+        token=db_config.get("token"),
+        org=db_config.get("org")
+        )
 
-    write_api = client.write_api(write_options=SYNCHRONOUS)
-# write a point or row to influxdb
-    p = influxdb_client.Point("SendorData").tag("location", location).tag("sensor", sensor).field("value", dblvalueraw).time(datetime.now(), WritePrecision.MS)
-    write_api.write(bucket=bucket, org=org, record=p)
+        if client is None:
+            print('Connection failed.')
+        else:
+            print('Connection established.')
+
+        write_api = client.write_api(write_options=SYNCHRONOUS)
+        # write a point or row to influxdb
+        p = influxdb_client.Point("SendorData").tag("location", location).tag("sensor", sensor).field("value", dblvalueraw).time(datetime.now(), WritePrecision.MS)
+        write_api.write(bucket=bucket, org=org, record=p)
 
     except client is None:
-        print("Connection Failed with error: " StandardError)
+        print("Connection Failed with error: " )
 
     finally:
         """
@@ -116,6 +124,72 @@ def insert_sensordatarows(rows: object) -> object:
         """
         client.__del__()
 
+def query_sensordatarows(id, sensor, location, dblvalueraw, value2):
+    """
+    query for multiple rows
+    :param id:
+    :param sensor:
+    :param location:
+    :param dblvalue_raw:
+    :param value2:
+    """
+    query_api = client.query_api()
+    
+    try:
+        # connect to influxdb and insert a point = row
+        db_config = read_db_config()
+        client = influxdb_client.InfluxDBClient(
+        url=url,
+        token=token,
+        org=org
+        )
+        if client is None:
+            print('Connection failed.')
+        else:
+            print('Connection established.')    
+
+        # prepare query and data
+        query = """ UPDATE SensorData
+            SET location = %s
+            WHERE id = %s """
+
+        data = (location, id)
+
+
+        #p = Point("SensorData").tag("location", "right").tag("sensor", "ph").field("value", 99.9987).time(datetime.now(), WritePrecision.MS)
+
+        # influx query
+        query = 'from(bucket: "HydroSensorData")\
+        |> range(start: -1m)\
+        |> filter(fn: (r) => r._measurement == "SensorData")\
+        |> filter(fn: (r) => r._field == "value")\
+        |> filter(fn: (r) => r.location == "right")'
+
+
+        # using Table structure
+        tables = query_api.query('from(bucket:"HydroSensorData") |> range(start: -1m)')
+        for table in tables:
+            print(table)
+        for record in table.records:
+            # process record
+            print(record.values)
+
+        # using csv library
+        csv_result = query_api.query_csv('from(bucket:"my-bucket") |> range(start: -10m)')
+        val_count = 0
+        for record in csv_result:
+            for cell in record:
+                val_count += 1
+                print("val count: ", val_count)
+
+        response = query_api.query_raw('from(bucket:"HydroSensorData") |> range(start: -10m)')
+        print (codecs.decode(response.data))
+
+    except: pass
+
+    finally:
+        print('query_sensordatarows - Connection Closed.')
+        client.__del__()
 
 def update_sensordatarows(id, sensor, location, dblvalueraw, value2):
     """
@@ -137,19 +211,29 @@ def update_sensordatarows(id, sensor, location, dblvalueraw, value2):
     data = (location, id)
 
     try:
-        conn = MySQLConnection(**db_config)
+        # connect to influxdb and insert a point = row
+        db_config = read_db_config()
+        client = influxdb_client.InfluxDBClient(
+        url=url,
+        token=token,
+        org=org
+        )
+        if client is None:
+            print('Connection failed.')
+        else:
+            print('Connection established.')    
 
-        # update location
-        cursor = conn.cursor()
-        cursor.execute(query, data)
+        # prepare query and data
+        query = """ UPDATE SensorData
+                SET location = %s
+                WHERE id = %s """
 
-        # accept the changes
-        conn.commit()
+        data = (location, id)
 
-    except Error as error:
-        print(error)
+
+    except: pass
 
     finally:
-        cursor.close()
-        conn.close()
         print('update_sensordatarows - Connection Closed.')
+        client.__del__()
+        

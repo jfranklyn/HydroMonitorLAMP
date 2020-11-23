@@ -7,6 +7,7 @@
    Gravity ph, rpo, ec, water level sensors added
    AdaFruit DS18B20 waterproof, temperature sensor added
    Optomax digital liquid sensor added
+   Changed database from mysql to influxdb
 :return:
 """
 
