@@ -280,25 +280,30 @@ def handler(signal_received, frame):
     print('SIGINT or CTRL-C detected. Exiting gracefully')
     exit(0)
 
+"""
+Configuration Settings
 
-# Configuration Settings
+Define the sensor names, what sensors are connected, the sensor type, the
+Gravity I2C addresses and define a primary temperature sensor.
+In the case shown below that would be either "temp_1" or "atlas_sensor_1".
+This is the sensor that is in the liquid that is being sampled and is used
+as a reference by the other sensors. If there are no temperature sensors
+connected a default value of 25C will be applied.
 
-# Define the sensor names, what sensors are connected, the sensor type, the
-# Gravity I2C addresses and define a primary temperature sensor.
-# In the case shown below that would be either "temp_1" or "atlas_sensor_1".
-# This is the sensor that is in the liquid that is being sampled and is used
-# as a reference by the other sensors. If there are no temperature sensors
-# connected a default value of 25C will be applied.
-#
-# Note: The temperature sensors cannot both be set to "is_ref: True", also
-# "temp_1" must always be a DS18B20 type sensor and "temp_1_sub" must
-# always be type temperature sensor so that the reference
-# temperature is always set before the other Gravity sensors are read.
-# AdaFruit ADS1115 ADC+PGA controller used as the i2c interface for the pH, ORP, EC sensors
-# This code was updated to support multiple hydroponic tanks
-# AdaFruit BME288 temperature, pressure, humidity sensor added. This sensor uses SPI
-# AdaFruit, Optomax digital liquid level gauges added. These gauges are connected directly through GPIO
+Note: The temperature sensors cannot both be set to "is_ref: True", also
+"temp_1" must always be a DS18B20 type sensor and "temp_1_sub" must
+always be type temperature sensor so that the reference
+Add this line to /boot/config.txt
+    dtoverlay=w1-gpio,gpiopin=4,pullup=on
+Add this line to /etc/modules
+    w1-therm strong_pullup=1
+temperature is always set before the other Gravity sensors are read.
 
+AdaFruit ADS1115 ADC+PGA controller used as the i2c interface for the pH, ORP, EC sensors
+This code was updated to support multiple hydroponic tanks
+AdaFruit BME288 temperature, pressure, humidity sensor added. This sensor uses SPI
+AdaFruit, Optomax digital liquid level gauges added. These gauges are connected directly through GPIO
+"""
 
 sensors = OrderedDict([
     ("temp_1_sub", {  # DS18B20 AdaFruit Submerged Temperature Sensor
@@ -308,7 +313,7 @@ sensors = OrderedDict([
         "is_ref": True,
         "ds18b20_file":
         # Hard coded for this device. This will change if another 1-wire device is added
-            "/sys/bus/w1/devices/28-1b202933bcff/w1_slave",
+            "/sys/bus/w1/devices/28-00000bdeccb7/w1_slave",
         "accuracy": 1}),
 
     ("bme288_sensor_1", {  # BME288 Temp/Humidity/Pressure Sensor
