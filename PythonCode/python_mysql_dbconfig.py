@@ -58,7 +58,7 @@ def query_with_fetchall():
         dbconfig = read_db_config()
         conn = MySQLConnection(**dbconfig)
         cursor = conn.cursor()
-        cursor.execute("SELECT sensor, location, dblvalueraw, value2, reading_time FROM SensorData")
+        cursor.execute("SELECT sensor, location, valueraw, notes, reading_time FROM SensorData")
         rows = cursor.fetchall()
 
         print('Total Row(s):', cursor.rowcount)
@@ -112,17 +112,17 @@ def query_with_fetchmany():
 
 
 #   Insert a single row
-def insert_sensordatarow(sensor, location, dblvalueraw, value2):
+def insert_sensordatarow(sensor, location, valueraw, notes):
     """
     Insert statment for sensor row data - One row
     :param sensor:
     :param location:
     :param dblvalue_raw:
-    :param value2:
+    :param notes:
     """
-    query = "INSERT INTO SensorData(sensor, location, dblvalueraw, value2) " \
+    query = "INSERT INTO SensorData(sensor, location, valueraw, notes) " \
             "VALUES(%s, %s, %d, %s)"
-    args = (sensor, location, dblvalue_raw, value2)
+    args = (sensor, location, dblvalue_raw, notes)
 
     try:
         db_config = read_db_config()
@@ -151,11 +151,11 @@ def insert_sensordatarows(rows: object) -> object:
     Insert statment for sensor row data - Multiple rows
     :param rows:
     """
-    query = "INSERT INTO SensorData(sensor, location, dblvalueraw, value2) " \
+    query = "INSERT INTO SensorData(sensor, location, valueraw, notes) " \
             "VALUES(%s, %s, %s, %s)"
 
     try:
-        print('Connecting to MySQL database:pihydropdata')
+        print('Connecting to MySQL database:SensorData')
         db_config = read_db_config()
         conn = MySQLConnection(**db_config)
         if conn.is_connected():
@@ -176,14 +176,14 @@ def insert_sensordatarows(rows: object) -> object:
         print('insert_sensordatarows - Connection Closed.')
 
 
-def update_sensordatarows(id, sensor, location, dblvalueraw, value2):
+def update_sensordatarows(id, sensor, location, valueraw, notes):
     """
     update for multiple rows
     :param id:
     :param sensor:
     :param location:
     :param dblvalue_raw:
-    :param value2:
+    :param notes:
     """
     # read database configuration
     db_config = read_db_config()
