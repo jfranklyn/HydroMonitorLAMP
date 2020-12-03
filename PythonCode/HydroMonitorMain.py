@@ -16,6 +16,7 @@ import os
 import sys
 import time
 import logging
+import glob
 from collections import OrderedDict
 from signal import signal, SIGINT
 
@@ -92,35 +93,18 @@ finally:
 
 sleep_timer = 200  # sensors are read every 10 minutes
 
-def check_for_only_one_reference_temperature():
-    """
-    Verify that ony one temperature sensor is used for reference be the other sensors
-    NOT USED
-    :return:
-    """
-    ref_check = 0
+def check_for_one_wire_temperature_sensors():
+"""
+Verify that there is at least one ds18b20, temperature sensor configured
+1 wire sensors should be defined in this folder: /sys/bus/w1/devices
+:return:
+"""
+    cnt_1wiredevs = 0
+    #path name variable .
+    path="/sys/bus/w1/devices/28-*"
+    cnt_1wiredevs = glob.glob(myPath)
 
-    for key, value in list(sensors.items()):
-        if (value["is_connected"]) is True:
-            if value["sensor_type"] == "1_wire_temp":
-                if value["is_ref"] is True:
-                    ref_check += 1
-                else:
-                    pass
-            else:
-                pass
-        else:
-            pass
-        if ref_check > 1:
-            os.system('clear')
-            print("\n\n                     !!!! WARNING !!!!\n\n"
-                  "You can only have one Primary Temperature sensor, Please set the\n"
-                  "Temperature sensor that is in the liquid you are testing to True\n"
-                  "and the other to False\n\n                     !!!! WARNING !!!!\n\n")
-            sys.exit()  # Stop program
-        else:
-            pass
-    return
+return len(cnt_1wiredevs)
 
 
 # Read in the data from the Submerged Temp Sensor file
@@ -426,6 +410,7 @@ AdaFruit ADS1115 ADC+PGA controller used as the i2c interface for the pH, ORP, E
 This code was updated to support multiple hydroponic tanks
 AdaFruit BME288 temperature, pressure, humidity sensor added. This sensor uses SPI
 AdaFruit, Optomax digital liquid level gauges added. These gauges are connected directly through GPIO
+Added dictionary entry for 2nd temperature sensor
 """
 
 sensors = OrderedDict([
@@ -439,6 +424,16 @@ sensors = OrderedDict([
             "/sys/bus/w1/devices/28-00000bdeccb7/w1_slave",
         "accuracy": 1}),
 
+    ("temp_2_sub", {  # DS18B20 AdaFruit Submerged Temperature Sensor
+        "sensor_type": "1_wire_temp",
+        "name": "subm_temp",
+        "is_connected": True,
+        "is_ref": True,
+        "ds18b20_file":
+        # Hard coded for this device. This will change if another 1-wire device is added
+            "/sys/bus/w1/devices/28-1b202933bcff/w1_slave",
+        "accuracy": 1}),
+    
     ("bme288_sensor_1", {  # BME288 Temp/Humidity/Pressure Sensor
         "sensor_type": "bme288_spi_temp_humid_press",
         "name": "bme288_SPI",
@@ -530,6 +525,15 @@ def main():
         # Read sensors for 2 locations connected to the ADS1115. Gravity sensors . 6 sensors attached
         all_curr_readings_right = []
         all_curr_readings_left = []
+        
+        # Verify that the 1 wire temperature probes have been configured
+        Count1WireDevices = check_for_one_wire_temperature_sensors()
+        if Count1WireDevices = 0:
+            #log error
+            sys.exit(0)
+            else:
+                pass
+            
         read_sensors_right(all_curr_readings_right)
         #   update the database will all sensor readings
         log_sensor_readings(all_curr_readings_right)
