@@ -15,7 +15,6 @@
 import os
 import sys
 import time
-import logging
 import glob
 from collections import OrderedDict
 from signal import signal, SIGINT
@@ -39,13 +38,73 @@ from python_mysql_dbconfig import *
 
 # Configures pin numbering to Board reference
 #GPIO.setmode(GPIO.BOARD)
+# Set logger
+logging.basicConfig(filename=log_file_path)
+
+# Set db handler for root logger
+if (log_to_db):
+    logging.getLogger('').addHandler(logdb)
+# Register MY_LOGGER
+log = logging.getLogger('HydroMonitorApp Logger')
+log.setLevel(log_error_level)
+
+class LogDBHandler(logging.Handler):
+    '''
+    Customized logging handler that puts logs to the database.
+    modified for mysql - 10.3.25-MariaDB
+    '''
+    def __init__(self, sql_conn, sql_cursor, db_tbl_log):
+        logging.Handler.__init__(self)
+        self.sql_cursor = sql_cursor
+        self.sql_conn = sql_conn
+        self.db_tbl_log = db_tbl_log
+
+    def emit(self, record):
+        # Set current time
+        tm = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(record.created))
+        # Clear the log message so it can be put to db via sql (escape quotes)
+        self.log_msg = record.msg
+        self.log_msg = self.log_msg.strip()
+        self.log_msg = self.log_msg.replace('\'', '\'\'')
+        # Make the SQL insert
+        sql = 'INSERT INTO ' + self.db_tbl_log + ' (log_level, ' + \
+            'log_levelname, log, created_at, created_by) ' + \
+            'VALUES (' + \
+            ''   + str(record.levelno) + ', ' + \
+            '\'' + str(record.levelname) + '\', ' + \
+            '\'' + str(self.log_msg) + '\', ' + \
+            '\''+tm + '\', ' +  '\'' + str(record.name) + '\');'
+        print(sql)
+        try:
+            self.sql_cursor.execute(sql)
+            self.sql_conn.commit()
+        # If error - print it out on screen. Since DB is not working - there's
+        # no point making a log about it to the database :)
+        except Error as e:
+            print ('sql')
+            print ('CRITICAL DB ERROR! Logging to database not possible!'    )
 
 # initialize the log settings
 #logging.basicConfig(filename='HydroMonitorApp'+time.time_ns()+'.log',level=logging.ERROR)
-log_file_path = 'HydroMonitorApp'+time.time_ns()+'.log'
+log_file_path = 'HydroMonitorApp'+str(time.time_ns())+'.log'
 log_error_level     = 'DEBUG'       # LOG error level (file)
 log_to_db = True                    # LOG to database?
 db_tbl_log = 'Logger'
+# Setup error logging for log to database and log to file
+if (log_to_db):
+# Make the connection to database for the logger
+    try:
+        dbconfig = read_db_config()
+        log_conn = MySQLConnection(**dbconfig)
+        log_cursor = log_conn.cursor()
+        logdb = LogDBHandler(log_conn, log_cursor, db_tbl_log)
+
+    except Error as e:
+        print(e)
+    else:
+        print ('MySQL Logger Connection Successful')
+
+
 
 # initialize all objects
 ads1115_l = ADS1115()
@@ -93,43 +152,8 @@ try:
     bme280_l = adafruit_bme280.Adafruit_BME280_SPI(spi, cs_l)
 except RuntimeError as e:
     log.error('BME280 Left Not Found'+str(e))
-    exit(0)
+    #exit(0)
 
-class LogDBHandler(logging.Handler):
-    '''
-    Customized logging handler that puts logs to the database.
-    modified for mysql
-    '''
-    def __init__(self, sql_conn, sql_cursor, db_tbl_log):
-        logging.Handler.__init__(self)
-        self.sql_cursor = sql_cursor
-        self.sql_conn = sql_conn
-        self.db_tbl_log = db_tbl_log
-
-    def emit(self, record):
-        # Set current time
-        tm = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(record.created))
-        # Clear the log message so it can be put to db via sql (escape quotes)
-        self.log_msg = record.msg
-        self.log_msg = self.log_msg.strip()
-        self.log_msg = self.log_msg.replace('\'', '\'\'')
-        # Make the SQL insert
-        sql = 'INSERT INTO ' + self.db_tbl_log + ' (log_level, ' + \
-            'log_levelname, log, created_at, created_by) ' + \
-            'VALUES (' + \
-            ''   + str(record.levelno) + ', ' + \
-            '\'' + str(record.levelname) + '\', ' + \
-            '\'' + str(self.log_msg) + '\', ' + \
-            '(convert(datetime2(7), \'' + tm + '\')), ' + \
-            '\'' + str(record.name) + '\')'
-        try:
-            self.sql_cursor.execute(sql)
-            self.sql_conn.commit()
-        # If error - print it out on screen. Since DB is not working - there's
-        # no point making a log about it to the database :)
-        except Error as e:
-            print ('sql')
-            print ('CRITICAL DB ERROR! Logging to database not possible!'    )
 
 sleep_timer = 200  # sensors are read every 10 minutes
 
@@ -184,7 +208,6 @@ def read_1_wire_temp(temp_num):
         # temp_curr = ((float(temp_string) / 1000.0) * (9.0 / 5.0)) + 32
 
         return temp_curr
-
 
 def log_sensor_readings(all_curr_readings):
     """
@@ -535,28 +558,6 @@ ADS1115_REG_CONFIG_PGA_0_256V = 0x0A # 0.256V range = Gain 16
 read data from all sensors and write to to the mysql database
 """
 def main():
-
-    # Setup error logging for log to database and log to file
-    if (log_to_db):
-    # Make the connection to database for the logger
-        try:
-            dbconfig = read_db_config()
-            log_conn = MySQLConnection(**dbconfig)
-            log_cursor = log_conn.cursor()
-            logdb = LogDBHandler(log_conn, log_cursor, db_tbl_log)
-
-        except Error as e:
-            print(e)
-
-        # Set logger
-        logging.basicConfig(filename=log_file_path)
-
-        # Set db handler for root logger
-        if (log_to_db):
-            logging.getLogger('').addHandler(logdb)
-        # Register MY_LOGGER
-        log = logging.getLogger('MY_LOGGER')
-        log.setLevel(log_error_level)
     
     # change this to match the location's pressure (hPa) at sea level
     bme280_l.sea_level_pressure = 1013.25
@@ -606,7 +607,7 @@ def main():
 
         time.sleep(sleep_timer)  # sleep for 10 minutes
 
-
+  
 if __name__ == '__main__':
     main()
 
