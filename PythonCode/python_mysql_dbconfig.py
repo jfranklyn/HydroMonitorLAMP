@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 from configparser import ConfigParser
-
 from mysql.connector import MySQLConnection, Error
-
 
 def read_db_config(filename='../pihydropdata.ini', section='mysql'):
     """ Read database configuration file and return a dictionary object
