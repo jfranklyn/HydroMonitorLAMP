@@ -16,6 +16,7 @@ import os
 import sys
 import time
 import glob
+import logging
 from collections import OrderedDict
 from signal import signal, SIGINT
 
@@ -38,16 +39,8 @@ from python_mysql_dbconfig import *
 
 # Configures pin numbering to Board reference
 #GPIO.setmode(GPIO.BOARD)
-# Set logger
-logging.basicConfig(filename=log_file_path)
 
-# Set db handler for root logger
-if (log_to_db):
-    logging.getLogger('').addHandler(logdb)
-# Register MY_LOGGER
-log = logging.getLogger('HydroMonitorApp Logger')
-log.setLevel(log_error_level)
-
+# Logger class definition
 class LogDBHandler(logging.Handler):
     '''
     Customized logging handler that puts logs to the database.
@@ -103,8 +96,12 @@ if (log_to_db):
         print(e)
     else:
         print ('MySQL Logger Connection Successful')
-
-
+    logging.getLogger('').addHandler(logdb)
+    
+# Register MY_LOGGER
+log = logging.getLogger('HydroMonitorApp Logger')
+log.setLevel(log_error_level)
+logging.basicConfig(filename=log_file_path)
 
 # initialize all objects
 ads1115_l = ADS1115()
@@ -113,7 +110,7 @@ ads1115_r = ADS1115()
 ph = DFRobot_PH()
 ec = DFRobot_EC()
 # Set GPIO pin to input and activate pull_down walter level sensor to reference pin to ground
-gpio_pin = 18 # changed from pin 12
+gpio_pin = 15 
 GPIO.setup(gpio_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
 # Load Raspberry Pi Drivers for AdaFruit 1-Wire Temperature Sensor
@@ -165,7 +162,7 @@ Verify that there is at least one ds18b20, temperature sensor configured
 def check_for_one_wire_temperature_sensors():
     cnt_1wiredevs = 0
     #path name variable .
-    path="/sys/bus/w1/devices/28-*"
+    myPath="/sys/bus/w1/devices/28-*"
     cnt_1wiredevs = glob.glob(myPath)
 
     return len(cnt_1wiredevs)
@@ -203,9 +200,9 @@ def read_1_wire_temp(temp_num):
     if equals_pos != -1:
         temp_string = lines[1][equals_pos + 2:]
         # Use line below for Celsius
-        temp_curr = float(temp_string) / 1000.0
+        #temp_curr = float(temp_string) / 1000.0
         # Uncomment line below for Fahrenheit
-        # temp_curr = ((float(temp_string) / 1000.0) * (9.0 / 5.0)) + 32
+        temp_curr = ((float(temp_string) / 1000.0) * (9.0 / 5.0)) + 32
 
         return temp_curr
 
@@ -321,7 +318,7 @@ def read_sensors_right(all_curr_readings):
             if value["sensor_type"] == "gravity_orp":
                 # Create single-ended input on channel 0
                 try:
-                    chan = AnalogIn(ads, ADS.P2)
+                    chan = AnalogIn(ads_r, ADS.P2)
                     # debug
                     #                print("{:>5}\t{:>5.3f}".format(chan.value, chan.voltage))
                     all_curr_readings.append([value["name"], chan.value, location])
@@ -333,19 +330,16 @@ def read_sensors_right(all_curr_readings):
 
             if value["sensor_type"] == "optomax_digital_liquid_sensor":
                 try:
-                    if GPIO.input(gpio_pin):  
+                    if GPIO.input(gpio_pin) == 0:  
                         # debug
                         #   print("GPIO pin 12 is: ", GPIO.input(gpio_pin))
                         
-                        all_curr_readings.append([value["name"], "Water Level OK", location])
-                    else:
-                        all_curr_readings.append([value["name"], "Water Level LOW", location])                        
+                        all_curr_readings.append([value["name"], 0, location])
+                    if GPIO.input(gpio_pin) == 1:
+                        all_curr_readings.append([value["name"], 1, location])                        
 
                 except (GPIO.UNKNOWN()):
                         log.error ("GPIO.UNKNOWN this should never happen")
-                    
-            else:
-                pass
 
 def read_sensors_left(all_curr_readings):
     """
@@ -377,14 +371,12 @@ def read_sensors_left(all_curr_readings):
             if value["sensor_type"] == "gravity_ph":
                 # Create single-ended input on channel 0
                 try:
-                    # chan = AnalogIn(ads, ADS.P0)
                     # set the gain value and then read the sensor voltage
                     ads1115_l.setGain(ADS1115_REG_CONFIG_PGA_6_144V)
                     adc0 = ads1115_l.readVoltage(0)
-                    # Create differential input between channel 0 and 1
-                    # chan = AnalogIn(ads, ADS.P0, ADS.P1)
+
                     # debug
-                    #                print("{:>5}\t{:>5.3f}".format(chan.value, chan.voltage))
+                    print("{:>5}\t{:>5.3f}".format(chan.value, chan.voltage))
                     # get ph compensated value based on submerged temperature value
                     ph_comp = ph.readPH(adc0['r'], ref_temp)
                     all_curr_readings.append([value["name"], ph_comp, location])
@@ -413,7 +405,7 @@ def read_sensors_left(all_curr_readings):
             if value["sensor_type"] == "gravity_orp":
                 # Create single-ended input on channel 0
                 try:
-                    chan = AnalogIn(ads, ADS.P2)
+                    chan = AnalogIn(ads_l, ADS.P2)
                     # debug
                     #                print("{:>5}\t{:>5.3f}".format(chan.value, chan.voltage))
                     all_curr_readings.append([value["name"], chan.value, location])
@@ -425,20 +417,17 @@ def read_sensors_left(all_curr_readings):
 
             if value["sensor_type"] == "optomax_digital_liquid_sensor":
                 try:
-                    if GPIO.input(gpio_pin):  
+                    if GPIO.input(gpio_pin) == 0:  
                         # debug
                         #   print("GPIO pin 12 is: ", GPIO.input(gpio_pin))
                         
-                        all_curr_readings.append([value["name"], "Water Level OK", location])
-                    else:
-                        all_curr_readings.append([value["name"], "Water Level LOW", location])                        
+                        all_curr_readings.append([value["name"], 0, location])
+                    if GPIO.input(gpio_pin) == 1:
+                        all_curr_readings.append([value["name"], 1, location])                        
 
                 except (GPIO.UNKNOWN()):
                         log.error ("GPIO.UNKNOWN this should never happen")
-                    
-            else:
-                pass
-
+ 
 def handler(signal_received, frame):
     """
     Handle keyboard interrupts
@@ -560,7 +549,7 @@ read data from all sensors and write to to the mysql database
 def main():
     
     # change this to match the location's pressure (hPa) at sea level
-    bme280_l.sea_level_pressure = 1013.25
+#    bme280_l.sea_level_pressure = 1013.25
     bme280_r.sea_level_pressure = 1013.25
     
     while True:
@@ -578,15 +567,15 @@ def main():
         insert_sensordatarows(sensor_data_rows_right)
 
         #   insert data from left closet into MySQL
-        sensor_data_rows_left = [('temperature', 'left closet', bme280_l.temperature, ''),
-                                 ('humidity', 'left closet', bme280_l.humidity, ''),
-                                 ('pressure', 'left closet', bme280_l.pressure, '')]
-
-        insert_sensordatarows(sensor_data_rows_left)
+##        sensor_data_rows_left = [('temperature', 'left closet', bme280_l.temperature, ''),
+##                                 ('humidity', 'left closet', bme280_l.humidity, ''),
+##                                 ('pressure', 'left closet', bme280_l.pressure, '')]
+##
+##        insert_sensordatarows(sensor_data_rows_left)
 
         # Read sensors for 2 locations connected to the ADS1115. Gravity sensors . 6 sensors attached
         all_curr_readings_right = []
-        all_curr_readings_left = []
+#        all_curr_readings_left = []
         
         # Verify that the 1 wire temperature probes have been configured
         Count1WireDevices = check_for_one_wire_temperature_sensors()
@@ -602,8 +591,8 @@ def main():
 
         # read_sensors(all_curr_readings_left)
         #   update the database will all sensor readings
-        read_sensors_left(all_curr_readings_left)
-        log_sensor_readings(all_curr_readings_left)
+        #read_sensors_left(all_curr_readings_left)
+        #log_sensor_readings(all_curr_readings_left)
 
         time.sleep(sleep_timer)  # sleep for 10 minutes
 
