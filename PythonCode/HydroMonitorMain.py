@@ -137,22 +137,24 @@ except RuntimeError as e:
 # Create library object using SPI port for BME280
 # Add logic for right and left IO boards. Exit program if the boards don't exist
 spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
-try:
-    cs_r = digitalio.DigitalInOut(board.D7) # Pin BCM7
-    bme280_r = adafruit_bme280.Adafruit_BME280_SPI(spi, cs_r)
-except RuntimeError as e:
-    log.error('BME280 Right Not Found'+str(e))
-    exit(0)
+
     
 try:
     cs_l = digitalio.DigitalInOut(board.D12) # Pin BCM12
     bme280_l = adafruit_bme280.Adafruit_BME280_SPI(spi, cs_l)
 except RuntimeError as e:
     log.error('BME280 Left Not Found'+str(e))
-    #exit(0)
+    exit(0)
+
+try:
+    cs_r = digitalio.DigitalInOut(board.D7) # Pin BCM7
+    bme280_r = adafruit_bme280.Adafruit_BME280_SPI(spi, cs_r)
+except RuntimeError as e:
+    log.error('BME280 Right Not Found'+str(e))
+    exit(0)
 
 
-sleep_timer = 200  # sensors are read every 10 minutes
+sleep_timer = 600  # sensors are read every 30 minutes
 
 """
 Verify that there is at least one ds18b20, temperature sensor configured
@@ -249,17 +251,17 @@ def log_sensor_readings(all_curr_readings):
 
     curs.close()
     conn.close()
+    log.setLevel('INFO')
     log.error('log_sensor_readings - Successful. Connection Closed.')
 
-
-def read_sensors_right(all_curr_readings):
+def read_sensors(all_curr_readings, location, ADS1115):
     """
+    Generic version to work with any number of locations
     Read data from all sensors
     :param all_curr_readings:
     :param location:
     """
     # Get the readings from any 1-Wire temperature sensors. This sensor is submerged in the tank
-    location = "right_closet"
     
     for key, value in sensors.items():
         if value["is_connected"] is True:
@@ -341,92 +343,6 @@ def read_sensors_right(all_curr_readings):
                 except (GPIO.UNKNOWN()):
                         log.error ("GPIO.UNKNOWN this should never happen")
 
-def read_sensors_left(all_curr_readings):
-    """
-    Read data from all sensors
-    :param all_curr_readings:
-    :param location:
-    """
-    # Get the readings from any 1-Wire temperature sensors. This sensor is submerged in the tank
-    location = "left_closet"
-    
-    for key, value in sensors.items():
-        if value["is_connected"] is True:
-            if value["sensor_type"] == "1_wire_temp":
-                try:
-                    sensor_reading = (round(float(read_1_wire_temp(key)),
-                                            value["accuracy"]))
-                except (sensor_reading == 0):
-                    sensor_reading = 0
-                    ref_temp = 25
-
-                all_curr_readings.append([value["name"], sensor_reading, location])
-
-                if value["is_ref"] is True:
-                    ref_temp = sensor_reading
-
-            # Get the readings from any Gravity pH sensors
-            # ADS channel P0
-
-            if value["sensor_type"] == "gravity_ph":
-                # Create single-ended input on channel 0
-                try:
-                    # set the gain value and then read the sensor voltage
-                    ads1115_l.setGain(ADS1115_REG_CONFIG_PGA_6_144V)
-                    adc0 = ads1115_l.readVoltage(0)
-
-                    # debug
-                    print("{:>5}\t{:>5.3f}".format(chan.value, chan.voltage))
-                    # get ph compensated value based on submerged temperature value
-                    ph_comp = ph.readPH(adc0['r'], ref_temp)
-                    all_curr_readings.append([value["name"], ph_comp, location])
-
-                except(ph_comp == 0):
-                    sensor_reading = 0.0
-
-            # Get the readings from any Gravity Electrical Conductivity sensors
-            # ADS channel P1
-
-            if value["sensor_type"] == "gravity_ec":
-                # Create single-ended input on channel 0
-                try:
-                    # chan = AnalogIn(ads, ADS.P1)
-                    ads1115.setGain(ADS1115_REG_CONFIG_PGA_6_144V)
-                    adc1 = ads1115_l.readVoltage(1)
-                    ec_comp = ec.readEC(adc1['r'], ref_temp)
-                    all_curr_readings.append([value["name"], ec_comp, location])
-
-                except (ec_comp == 0):
-                    sensor_reading = 0.0
-
-            # Get the readings from any Gravity ORP sensors
-            # ADS channel P2. Measured in milli-volts
-
-            if value["sensor_type"] == "gravity_orp":
-                # Create single-ended input on channel 0
-                try:
-                    chan = AnalogIn(ads_l, ADS.P2)
-                    # debug
-                    #                print("{:>5}\t{:>5.3f}".format(chan.value, chan.voltage))
-                    all_curr_readings.append([value["name"], chan.value, location])
-
-                except (chan == []):
-                    sensor_reading = 0.0
-
-            # Get the readings from Optomax water level sensor
-
-            if value["sensor_type"] == "optomax_digital_liquid_sensor":
-                try:
-                    if GPIO.input(gpio_pin) == 0:  
-                        # debug
-                        #   print("GPIO pin 12 is: ", GPIO.input(gpio_pin))
-                        
-                        all_curr_readings.append([value["name"], 0, location])
-                    if GPIO.input(gpio_pin) == 1:
-                        all_curr_readings.append([value["name"], 1, location])                        
-
-                except (GPIO.UNKNOWN()):
-                        log.error ("GPIO.UNKNOWN this should never happen")
  
 def handler(signal_received, frame):
     """
@@ -549,7 +465,7 @@ read data from all sensors and write to to the mysql database
 def main():
     
     # change this to match the location's pressure (hPa) at sea level
-#    bme280_l.sea_level_pressure = 1013.25
+    bme280_l.sea_level_pressure = 1013.25
     bme280_r.sea_level_pressure = 1013.25
     
     while True:
@@ -557,9 +473,10 @@ def main():
         print('Running. Press CTRL-C to exit.')
 
         #   insert data from right closet into MySQL
-        sensor_data_rows_right = [('temperature', 'right closet', bme280_r.temperature, ''),
-                                  ('humidity', 'right Closet', bme280_r.humidity, ''),
-                                  ('pressure', 'right closet', bme280_r.pressure, '')]
+        sensor_data_rows_right = [('temperature', 'right_closet', bme280_r.temperature, ''),
+                                  ('humidity', 'right_closet', bme280_r.humidity, ''),
+                                  ('pressure', 'right_closet', bme280_r.pressure, '')]
+        # debug
         # print (SensorDataRowsRight)
         #   query = "INSERT INTO SensorData(sensor, location, valueraw, notes) " \
         #           "VALUES(%s, %s, %d, %s)"
@@ -567,16 +484,14 @@ def main():
         insert_sensordatarows(sensor_data_rows_right)
 
         #   insert data from left closet into MySQL
-##        sensor_data_rows_left = [('temperature', 'left closet', bme280_l.temperature, ''),
-##                                 ('humidity', 'left closet', bme280_l.humidity, ''),
-##                                 ('pressure', 'left closet', bme280_l.pressure, '')]
-##
-##        insert_sensordatarows(sensor_data_rows_left)
+        sensor_data_rows_left = [('temperature', 'left_closet', bme280_l.temperature, ''),
+                                 ('humidity', 'left_closet', bme280_l.humidity, ''),
+                                 ('pressure', 'left_closet', bme280_l.pressure, '')]
+
+        insert_sensordatarows(sensor_data_rows_left)
 
         # Read sensors for 2 locations connected to the ADS1115. Gravity sensors . 6 sensors attached
-        all_curr_readings_right = []
-#        all_curr_readings_left = []
-        
+        all_curr_readings = []        
         # Verify that the 1 wire temperature probes have been configured
         Count1WireDevices = check_for_one_wire_temperature_sensors()
         if (Count1WireDevices == 0):
@@ -585,16 +500,22 @@ def main():
         else:
             pass
             
-        read_sensors_right(all_curr_readings_right)
+        # read_sensors_right(all_curr_readings_right)
+        read_sensors(all_curr_readings, 'right_closet', ads1115_r)
+
         #   update the database will all sensor readings
-        log_sensor_readings(all_curr_readings_right)
+        log_sensor_readings(all_curr_readings)
+
+        # initalize the list
+        all_curr_readings = []
 
         # read_sensors(all_curr_readings_left)
         #   update the database will all sensor readings
-        #read_sensors_left(all_curr_readings_left)
-        #log_sensor_readings(all_curr_readings_left)
+        read_sensors(all_curr_readings, 'left_closet', ads1115_l)
+        # read_sensors_left(all_curr_readings_left)
+        log_sensor_readings(all_curr_readings)
 
-        time.sleep(sleep_timer)  # sleep for 10 minutes
+        time.sleep(sleep_timer)  # sleep for 30 minutes
 
   
 if __name__ == '__main__':
