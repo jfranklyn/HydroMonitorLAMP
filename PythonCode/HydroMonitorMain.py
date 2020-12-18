@@ -191,22 +191,26 @@ def read_1_wire_temp(temp_num):
     :param temp_num:
     :return:
     """
-    lines = read_1_wire_temp_raw(temp_num)
-
-    while lines[0].strip()[-3:] != 'YES':
-        # noinspection PyUnresolvedReferences
-        time.sleep(0.2)
+    try:
         lines = read_1_wire_temp_raw(temp_num)
-    equals_pos = lines[1].find('t=')
 
-    if equals_pos != -1:
-        temp_string = lines[1][equals_pos + 2:]
-        # Use line below for Celsius
-        #temp_curr = float(temp_string) / 1000.0
-        # Uncomment line below for Fahrenheit
-        temp_curr = ((float(temp_string) / 1000.0) * (9.0 / 5.0)) + 32
+        while lines[0].strip()[-3:] != 'YES':
+            # noinspection PyUnresolvedReferences
+            time.sleep(0.2)
+            lines = read_1_wire_temp_raw(temp_num)
+        equals_pos = lines[1].find('t=')
 
-        return temp_curr
+        if equals_pos != -1:
+            temp_string = lines[1][equals_pos + 2:]
+            # Use line below for Celsius
+            #temp_curr = float(temp_string) / 1000.0
+            # Uncomment line below for Fahrenheit
+            temp_curr = ((float(temp_string) / 1000.0) * (9.0 / 5.0)) + 32
+            
+    except lines is None:
+        log.error('read_1_wire_temp: No 1 Wire sensors found')
+        return 0
+    return temp_curr
 
 def log_sensor_readings(all_curr_readings):
     """
