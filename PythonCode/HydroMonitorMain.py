@@ -103,7 +103,7 @@ log = logging.getLogger('HydroMonitorApp Logger')
 log.setLevel(log_error_level)
 logging.basicConfig(filename=log_file_path)
 
-# initialize all objects
+# initialize all objects. 
 ads1115_l = ADS1115()
 ads1115_r = ADS1115()
 
@@ -120,15 +120,16 @@ os.system('modprobe w1-therm')
 # Setup objects for ADS1115 board
 i2c = busio.I2C(board.SCL, board.SDA)
 
+# Each ads1115 must have a unique address
 try:
-    ads_r = ADS.ADS1115(i2c)
+    ads_l = ADS.ADS1115(i2c)
     ads1115_l.setAddr_ADS1115(0x48)
 except RuntimeError as e:
     log.error('ADS1115(0x48) Not Found'+str(e))
     exit(0)
 
 try:
-    ads_l = ADS.ADS1115(i2c)
+    ads_r = ADS.ADS1115(i2c)
     ads1115_r.setAddr_ADS1115(0x49)
 except RuntimeError as e:
     log.error('ADS1115(0x49) Not Found'+str(e))
@@ -138,7 +139,7 @@ except RuntimeError as e:
 # Add logic for right and left IO boards. Exit program if the boards don't exist
 spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
 
-    
+# Each BME280 has a unique GPIO input pin    
 try:
     cs_l = digitalio.DigitalInOut(board.D12) # Pin BCM12
     bme280_l = adafruit_bme280.Adafruit_BME280_SPI(spi, cs_l)
@@ -207,9 +208,9 @@ def read_1_wire_temp(temp_num):
             # Uncomment line below for Fahrenheit
             temp_curr = ((float(temp_string) / 1000.0) * (9.0 / 5.0)) + 32
             
-    except lines is None:
+    except IndexError:
         log.error('read_1_wire_temp: No 1 Wire sensors found')
-        return 0
+        temp_curr = 72 # set this to a default value
     return temp_curr
 
 def log_sensor_readings(all_curr_readings):
@@ -262,8 +263,9 @@ def read_sensors(all_curr_readings, location, ADS1115):
     """
     Generic version to work with any number of locations
     Read data from all sensors
-    :param all_curr_readings:
-    :param location:
+    :param all_curr_readings: dictionary to hold all readings
+    :param location: supports any number of unique hydro tanks
+    :param ADS1115: AdaFruit ads1115 16 bit. Supports any number of sensors
     """
     # Get the readings from any 1-Wire temperature sensors. This sensor is submerged in the tank
     
@@ -504,7 +506,7 @@ def main():
         else:
             pass
             
-        # read_sensors_right(all_curr_readings_right)
+        # read_sensors_right(all_curr_readings_right). 
         read_sensors(all_curr_readings, 'right_closet', ads1115_r)
 
         #   update the database will all sensor readings
