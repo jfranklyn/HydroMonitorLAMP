@@ -19,9 +19,173 @@
   "links": [],
   "panels": [
     {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
       "datasource": null,
       "fieldConfig": {
         "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "hiddenSeries": false,
+      "id": 27,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 3,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.3.2",
+      "pointradius": 5,
+      "points": true,
+      "renderer": "flot",
+      "seriesOverrides": [
+        {}
+      ],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "format": "time_series",
+          "group": [
+            {
+              "params": [
+                "$__interval",
+                "none"
+              ],
+              "type": "time"
+            }
+          ],
+          "metricColumn": "location",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  reading_time AS \"time\",\n  location AS metric,\n  valueraw AS \"Value\"\nFROM SensorData\nWHERE\n  sensor = 'optomax_SPI' \nORDER BY reading_time",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "valueraw"
+                ],
+                "type": "column"
+              },
+              {
+                "params": [
+                  "avg"
+                ],
+                "type": "aggregate"
+              },
+              {
+                "params": [
+                  "valueraw"
+                ],
+                "type": "alias"
+              }
+            ]
+          ],
+          "table": "SensorData",
+          "timeColumn": "reading_time",
+          "timeColumnType": "timestamp",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            },
+            {
+              "datatype": "varchar",
+              "name": "",
+              "params": [
+                "sensor",
+                "=",
+                "'humidity'"
+              ],
+              "type": "expression"
+            }
+          ]
+        }
+      ],
+      "thresholds": [
+        {
+          "colorMode": "custom",
+          "fill": true,
+          "fillColor": "#F2495C",
+          "line": true,
+          "lineColor": "#F2495C",
+          "op": "lt",
+          "value": 1,
+          "yaxis": "left"
+        }
+      ],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Water Level Both Tanks",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "transparent": true,
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": "Water Level",
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {},
           "mappings": [],
           "thresholds": {
@@ -41,17 +205,13 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 5,
-        "w": 8,
-        "x": 0,
+        "h": 8,
+        "w": 12,
+        "x": 12,
         "y": 0
       },
-      "id": 14,
+      "id": 25,
       "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
         "reduceOptions": {
           "calcs": [
             "mean"
@@ -59,48 +219,82 @@
           "fields": "",
           "values": false
         },
-        "textMode": "auto"
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
       },
       "pluginVersion": "7.3.2",
       "targets": [
         {
           "format": "time_series",
-          "group": [],
-          "metricColumn": "none",
-          "rawQuery": true,
-          "rawSql": "SELECT\n  UNIX_TIMESTAMP(reading_time) DIV 60 * 60 AS \"time\",\n  sensor AS metric,\n  avg(valueraw) AS \"Value\"\nFROM SensorData\nWHERE\n  reading_time BETWEEN FROM_UNIXTIME(1607378346) AND FROM_UNIXTIME(1607464746) AND\n  sensor = 'subm_temp' AND location = 'right_closet'\nGROUP BY 1,2\nORDER BY UNIX_TIMESTAMP(reading_time) DIV 60 * 60",
+          "group": [
+            {
+              "params": [
+                "$__interval",
+                "none"
+              ],
+              "type": "time"
+            }
+          ],
+          "metricColumn": "sensor",
+          "rawQuery": false,
+          "rawSql": "SELECT\n  $__timeGroupAlias(reading_time,$__interval),\n  sensor AS metric,\n  min(valueraw) AS \"valueraw\"\nFROM SensorData\nWHERE\n  $__timeFilter(reading_time) AND\n  location = 'left_closet'\nGROUP BY 1,2\nORDER BY $__timeGroup(reading_time,$__interval)",
           "refId": "A",
           "select": [
             [
               {
                 "params": [
-                  "id"
+                  "valueraw"
                 ],
                 "type": "column"
+              },
+              {
+                "params": [
+                  "min"
+                ],
+                "type": "aggregate"
+              },
+              {
+                "params": [
+                  "valueraw"
+                ],
+                "type": "alias"
               }
             ]
           ],
-          "table": "Logger",
-          "timeColumn": "created_at",
+          "table": "SensorData",
+          "timeColumn": "reading_time",
           "timeColumnType": "timestamp",
           "where": [
             {
               "name": "$__timeFilter",
               "params": [],
               "type": "macro"
+            },
+            {
+              "datatype": "varchar",
+              "name": "",
+              "params": [
+                "location",
+                "=",
+                "'left_closet'"
+              ],
+              "type": "expression"
             }
           ]
         }
       ],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Right Closet Submerged Temperature",
-      "type": "stat"
+      "title": "Left Closet Minimum Readings",
+      "type": "gauge"
     },
     {
       "datasource": null,
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "continuous-BlPu"
+          },
           "custom": {},
           "mappings": [],
           "thresholds": {
@@ -115,17 +309,18 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unit": "pressurepsi"
         },
         "overrides": []
       },
       "gridPos": {
         "h": 5,
-        "w": 8,
-        "x": 8,
-        "y": 0
+        "w": 6,
+        "x": 0,
+        "y": 8
       },
-      "id": 15,
+      "id": 12,
       "options": {
         "orientation": "auto",
         "reduceOptions": {
@@ -137,85 +332,6 @@
         },
         "showThresholdLabels": true,
         "showThresholdMarkers": true
-      },
-      "pluginVersion": "7.3.2",
-      "targets": [
-        {
-          "format": "time_series",
-          "group": [],
-          "metricColumn": "none",
-          "rawQuery": true,
-          "rawSql": "SELECT\n  UNIX_TIMESTAMP(reading_time) DIV 60 * 60 AS \"time\",\n  sensor AS metric,\n  avg(valueraw) AS \"Value\"\nFROM SensorData\nWHERE\n  reading_time BETWEEN FROM_UNIXTIME(1607378346) AND FROM_UNIXTIME(1607464746) AND\n  sensor = 'subm_temp' AND location = 'left_closet'\nGROUP BY 1,2\nORDER BY UNIX_TIMESTAMP(reading_time) DIV 60 * 60",
-          "refId": "A",
-          "select": [
-            [
-              {
-                "params": [
-                  "id"
-                ],
-                "type": "column"
-              }
-            ]
-          ],
-          "table": "Logger",
-          "timeColumn": "created_at",
-          "timeColumnType": "timestamp",
-          "where": [
-            {
-              "name": "$__timeFilter",
-              "params": [],
-              "type": "macro"
-            }
-          ]
-        }
-      ],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Left Closet Submerged Temperature",
-      "type": "gauge"
-    },
-    {
-      "datasource": null,
-      "fieldConfig": {
-        "defaults": {
-          "custom": {},
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 8,
-        "x": 0,
-        "y": 5
-      },
-      "id": 12,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "mean"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
       },
       "pluginVersion": "7.3.2",
       "targets": [
@@ -271,12 +387,15 @@
       "timeFrom": null,
       "timeShift": null,
       "title": "Right Closet Pressure",
-      "type": "stat"
+      "type": "gauge"
     },
     {
       "datasource": null,
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "continuous-BlPu"
+          },
           "custom": {},
           "mappings": [],
           "thresholds": {
@@ -291,15 +410,16 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unit": "pressurepsi"
         },
         "overrides": []
       },
       "gridPos": {
         "h": 5,
-        "w": 8,
-        "x": 8,
-        "y": 5
+        "w": 5,
+        "x": 6,
+        "y": 8
       },
       "id": 16,
       "options": {
@@ -373,16 +493,119 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 5,
-        "w": 8,
-        "x": 0,
-        "y": 10
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 8
       },
-      "id": 10,
+      "id": 23,
       "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "7.3.2",
+      "targets": [
+        {
+          "format": "time_series",
+          "group": [
+            {
+              "params": [
+                "$__interval",
+                "none"
+              ],
+              "type": "time"
+            }
+          ],
+          "metricColumn": "sensor",
+          "rawQuery": false,
+          "rawSql": "SELECT\n  $__timeGroupAlias(reading_time,$__interval),\n  sensor AS metric,\n  max(valueraw) AS \"valueraw\"\nFROM SensorData\nWHERE\n  $__timeFilter(reading_time) AND\n  location = 'left_closet'\nGROUP BY 1,2\nORDER BY $__timeGroup(reading_time,$__interval)",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "valueraw"
+                ],
+                "type": "column"
+              },
+              {
+                "params": [
+                  "max"
+                ],
+                "type": "aggregate"
+              },
+              {
+                "params": [
+                  "valueraw"
+                ],
+                "type": "alias"
+              }
+            ]
+          ],
+          "table": "SensorData",
+          "timeColumn": "reading_time",
+          "timeColumnType": "timestamp",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            },
+            {
+              "datatype": "varchar",
+              "name": "",
+              "params": [
+                "location",
+                "=",
+                "'left_closet'"
+              ],
+              "type": "expression"
+            }
+          ]
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Left Closet Max Readings",
+      "type": "gauge"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 13
+      },
+      "id": 14,
+      "options": {
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
@@ -391,7 +614,8 @@
           "fields": "",
           "values": false
         },
-        "textMode": "auto"
+        "showThresholdLabels": true,
+        "showThresholdMarkers": true
       },
       "pluginVersion": "7.3.2",
       "targets": [
@@ -400,7 +624,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n  UNIX_TIMESTAMP(reading_time) DIV 60 * 60 AS \"time\",\n  sensor AS metric,\n  avg(valueraw) AS \"Value\"\nFROM SensorData\nWHERE\n  reading_time BETWEEN FROM_UNIXTIME(1607378346) AND FROM_UNIXTIME(1607464746) AND\n  sensor = 'humidity' AND location = 'right_closet'\nGROUP BY 1,2\nORDER BY UNIX_TIMESTAMP(reading_time) DIV 60 * 60",
+          "rawSql": "SELECT\n  UNIX_TIMESTAMP(reading_time) DIV 60 * 60 AS \"time\",\n  sensor AS metric,\n  avg(valueraw) AS \"Value\"\nFROM SensorData\nWHERE\n  reading_time BETWEEN FROM_UNIXTIME(1607378346) AND FROM_UNIXTIME(1607464746) AND\n  sensor = 'subm_temp' AND location = 'right_closet'\nGROUP BY 1,2\nORDER BY UNIX_TIMESTAMP(reading_time) DIV 60 * 60",
           "refId": "A",
           "select": [
             [
@@ -426,8 +650,8 @@
       ],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Right Closet Humidity",
-      "type": "stat"
+      "title": "Right Closet Submerged Temperature",
+      "type": "gauge"
     },
     {
       "datasource": null,
@@ -452,16 +676,13 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 5,
-        "w": 8,
-        "x": 8,
-        "y": 10
+        "h": 4,
+        "w": 5,
+        "x": 6,
+        "y": 13
       },
-      "id": 17,
+      "id": 15,
       "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
@@ -470,7 +691,370 @@
           "fields": "",
           "values": false
         },
-        "textMode": "auto"
+        "showThresholdLabels": true,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "7.3.2",
+      "targets": [
+        {
+          "format": "time_series",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  UNIX_TIMESTAMP(reading_time) DIV 60 * 60 AS \"time\",\n  sensor AS metric,\n  avg(valueraw) AS \"Value\"\nFROM SensorData\nWHERE\n  reading_time BETWEEN FROM_UNIXTIME(1607378346) AND FROM_UNIXTIME(1607464746) AND\n  sensor = 'subm_temp' AND location = 'left_closet'\nGROUP BY 1,2\nORDER BY UNIX_TIMESTAMP(reading_time) DIV 60 * 60",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "id"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "table": "Logger",
+          "timeColumn": "created_at",
+          "timeColumnType": "timestamp",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Left Closet Submerged Temperature",
+      "type": "gauge"
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 16
+      },
+      "hiddenSeries": false,
+      "id": 29,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.3.2",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "format": "time_series",
+          "group": [
+            {
+              "params": [
+                "$__interval",
+                "none"
+              ],
+              "type": "time"
+            }
+          ],
+          "metricColumn": "sensor",
+          "rawQuery": false,
+          "rawSql": "SELECT\n  $__timeGroupAlias(reading_time,$__interval),\n  sensor AS metric,\n  avg(valueraw) AS \"Value\"\nFROM SensorData\nWHERE\n  $__timeFilter(reading_time)\nGROUP BY 1,2\nORDER BY $__timeGroup(reading_time,$__interval)",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "valueraw"
+                ],
+                "type": "column"
+              },
+              {
+                "params": [
+                  "avg"
+                ],
+                "type": "aggregate"
+              },
+              {
+                "params": [
+                  "Value"
+                ],
+                "type": "alias"
+              }
+            ]
+          ],
+          "table": "SensorData",
+          "timeColumn": "reading_time",
+          "timeColumnType": "timestamp",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [
+        {
+          "colorMode": "background6",
+          "fill": true,
+          "fillColor": "rgba(234, 112, 112, 0.12)",
+          "line": false,
+          "lineColor": "rgba(237, 46, 24, 0.60)",
+          "op": "time"
+        }
+      ],
+      "timeShift": null,
+      "title": "Sensor Readings > 30 Days",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "pressurehg"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 17
+      },
+      "id": 10,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "7.3.2",
+      "targets": [
+        {
+          "format": "time_series",
+          "group": [
+            {
+              "params": [
+                "$__interval",
+                "none"
+              ],
+              "type": "time"
+            }
+          ],
+          "metricColumn": "sensor",
+          "rawQuery": false,
+          "rawSql": "SELECT\n  $__timeGroupAlias(reading_time,$__interval),\n  sensor AS metric,\n  avg(valueraw) AS \"Value\"\nFROM SensorData\nWHERE\n  $__timeFilter(reading_time) AND\n  location = 'right_closet' AND\n  sensor = 'humidity'\nGROUP BY 1,2\nORDER BY $__timeGroup(reading_time,$__interval)",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "valueraw"
+                ],
+                "type": "column"
+              },
+              {
+                "params": [
+                  "avg"
+                ],
+                "type": "aggregate"
+              },
+              {
+                "params": [
+                  "Value"
+                ],
+                "type": "alias"
+              }
+            ]
+          ],
+          "table": "SensorData",
+          "timeColumn": "reading_time",
+          "timeColumnType": "timestamp",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            },
+            {
+              "datatype": "varchar",
+              "name": "",
+              "params": [
+                "location",
+                "=",
+                "'right_closet'"
+              ],
+              "type": "expression"
+            },
+            {
+              "datatype": "varchar",
+              "name": "",
+              "params": [
+                "sensor",
+                "=",
+                "'humidity'"
+              ],
+              "type": "expression"
+            }
+          ]
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Right Closet Humidity",
+      "type": "gauge"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "pressurehg"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 6,
+        "y": 17
+      },
+      "id": 17,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
       },
       "pluginVersion": "7.3.2",
       "targets": [
@@ -506,12 +1090,16 @@
       "timeFrom": null,
       "timeShift": null,
       "title": "Left Closet Humidity",
-      "type": "stat"
+      "type": "gauge"
     },
     {
       "datasource": null,
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "fixedColor": "purple",
+            "mode": "fixed"
+          },
           "custom": {},
           "mappings": [],
           "thresholds": {
@@ -526,21 +1114,19 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unit": "fahrenheit"
         },
         "overrides": []
       },
       "gridPos": {
         "h": 4,
-        "w": 8,
+        "w": 6,
         "x": 0,
-        "y": 15
+        "y": 21
       },
       "id": 8,
       "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
@@ -549,35 +1135,76 @@
           "fields": "",
           "values": false
         },
-        "textMode": "auto"
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
       },
       "pluginVersion": "7.3.2",
       "targets": [
         {
           "format": "time_series",
-          "group": [],
-          "metricColumn": "none",
-          "rawQuery": true,
-          "rawSql": "SELECT\n  UNIX_TIMESTAMP(reading_time) DIV 60 * 60 AS \"time\",\n  sensor AS metric,\n  avg(valueraw) AS \"Value\"\nFROM SensorData\nWHERE\n  reading_time BETWEEN FROM_UNIXTIME(1607378346) AND FROM_UNIXTIME(1607464746) AND\n  sensor = 'temperature' AND location = 'right_closet'\nGROUP BY 1,2\nORDER BY UNIX_TIMESTAMP(reading_time) DIV 60 * 60",
+          "group": [
+            {
+              "params": [
+                "$__interval",
+                "none"
+              ],
+              "type": "time"
+            }
+          ],
+          "metricColumn": "sensor",
+          "rawQuery": false,
+          "rawSql": "SELECT\n  $__timeGroupAlias(reading_time,$__interval),\n  sensor AS metric,\n  avg(valueraw) AS \"Value\"\nFROM SensorData\nWHERE\n  $__timeFilter(reading_time) AND\n  location = 'right_closet' AND\n  sensor = 'temperature'\nGROUP BY 1,2\nORDER BY $__timeGroup(reading_time,$__interval)",
           "refId": "A",
           "select": [
             [
               {
                 "params": [
-                  "id"
+                  "valueraw"
                 ],
                 "type": "column"
+              },
+              {
+                "params": [
+                  "avg"
+                ],
+                "type": "aggregate"
+              },
+              {
+                "params": [
+                  "Value"
+                ],
+                "type": "alias"
               }
             ]
           ],
-          "table": "Logger",
-          "timeColumn": "created_at",
+          "table": "SensorData",
+          "timeColumn": "reading_time",
           "timeColumnType": "timestamp",
           "where": [
             {
               "name": "$__timeFilter",
               "params": [],
               "type": "macro"
+            },
+            {
+              "datatype": "varchar",
+              "name": "",
+              "params": [
+                "location",
+                "=",
+                "'right_closet'"
+              ],
+              "type": "expression"
+            },
+            {
+              "datatype": "varchar",
+              "name": "",
+              "params": [
+                "sensor",
+                "=",
+                "'temperature'"
+              ],
+              "type": "expression"
             }
           ]
         }
@@ -585,7 +1212,129 @@
       "timeFrom": null,
       "timeShift": null,
       "title": "Right Closet Temperature",
-      "type": "stat"
+      "type": "gauge"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "purple",
+            "mode": "fixed"
+          },
+          "custom": {},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "fahrenheit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 6,
+        "y": 21
+      },
+      "id": 18,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "7.3.2",
+      "targets": [
+        {
+          "format": "time_series",
+          "group": [
+            {
+              "params": [
+                "$__interval",
+                "none"
+              ],
+              "type": "time"
+            }
+          ],
+          "metricColumn": "sensor",
+          "rawQuery": false,
+          "rawSql": "SELECT\n  $__timeGroupAlias(reading_time,$__interval),\n  sensor AS metric,\n  avg(valueraw) AS \"valueraw\"\nFROM SensorData\nWHERE\n  $__timeFilter(reading_time) AND\n  location = 'left_closet' AND\n  sensor = 'temperature'\nGROUP BY 1,2\nORDER BY $__timeGroup(reading_time,$__interval)",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "valueraw"
+                ],
+                "type": "column"
+              },
+              {
+                "params": [
+                  "avg"
+                ],
+                "type": "aggregate"
+              },
+              {
+                "params": [
+                  "valueraw"
+                ],
+                "type": "alias"
+              }
+            ]
+          ],
+          "table": "SensorData",
+          "timeColumn": "reading_time",
+          "timeColumnType": "timestamp",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            },
+            {
+              "datatype": "varchar",
+              "name": "",
+              "params": [
+                "location",
+                "=",
+                "'left_closet'"
+              ],
+              "type": "expression"
+            },
+            {
+              "datatype": "varchar",
+              "name": "",
+              "params": [
+                "sensor",
+                "=",
+                "'temperature'"
+              ],
+              "type": "expression"
+            }
+          ]
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Left Closet Temperature",
+      "type": "gauge"
     },
     {
       "datasource": null,
@@ -611,94 +1360,12 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 8,
-        "x": 8,
-        "y": 15
-      },
-      "id": 18,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "mean"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
-      },
-      "pluginVersion": "7.3.2",
-      "targets": [
-        {
-          "format": "time_series",
-          "group": [],
-          "metricColumn": "none",
-          "rawQuery": true,
-          "rawSql": "SELECT\n  UNIX_TIMESTAMP(reading_time) DIV 60 * 60 AS \"time\",\n  sensor AS metric,\n  avg(valueraw) AS \"Value\"\nFROM SensorData\nWHERE\n  reading_time BETWEEN FROM_UNIXTIME(1607378346) AND FROM_UNIXTIME(1607464746) AND\n  sensor = 'temperature' AND location = 'left_closet'\nGROUP BY 1,2\nORDER BY UNIX_TIMESTAMP(reading_time) DIV 60 * 60",
-          "refId": "A",
-          "select": [
-            [
-              {
-                "params": [
-                  "id"
-                ],
-                "type": "column"
-              }
-            ]
-          ],
-          "table": "Logger",
-          "timeColumn": "created_at",
-          "timeColumnType": "timestamp",
-          "where": [
-            {
-              "name": "$__timeFilter",
-              "params": [],
-              "type": "macro"
-            }
-          ]
-        }
-      ],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Left Closet Temperature",
-      "type": "stat"
-    },
-    {
-      "datasource": null,
-      "fieldConfig": {
-        "defaults": {
-          "custom": {},
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 3,
-        "w": 8,
+        "w": 6,
         "x": 0,
-        "y": 19
+        "y": 25
       },
       "id": 6,
       "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
@@ -707,7 +1374,8 @@
           "fields": "",
           "values": false
         },
-        "textMode": "auto"
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
       },
       "pluginVersion": "7.3.2",
       "targets": [
@@ -743,7 +1411,7 @@
       "timeFrom": null,
       "timeShift": null,
       "title": "Right Closet ORP",
-      "type": "stat"
+      "type": "gauge"
     },
     {
       "datasource": null,
@@ -768,10 +1436,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 3,
-        "w": 8,
-        "x": 8,
-        "y": 19
+        "h": 4,
+        "w": 5,
+        "x": 6,
+        "y": 25
       },
       "id": 19,
       "options": {
@@ -850,15 +1518,12 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 8,
+        "w": 6,
         "x": 0,
-        "y": 22
+        "y": 29
       },
       "id": 4,
       "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
@@ -867,7 +1532,8 @@
           "fields": "",
           "values": false
         },
-        "textMode": "auto"
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
       },
       "pluginVersion": "7.3.2",
       "targets": [
@@ -903,7 +1569,7 @@
       "timeFrom": null,
       "timeShift": null,
       "title": "Right Closet EC",
-      "type": "stat"
+      "type": "gauge"
     },
     {
       "datasource": null,
@@ -933,9 +1599,9 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 8,
-        "x": 8,
-        "y": 22
+        "w": 5,
+        "x": 6,
+        "y": 29
       },
       "id": 20,
       "options": {
@@ -1007,23 +1673,21 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unit": "Volume"
         },
         "overrides": []
       },
       "gridPos": {
         "h": 4,
-        "w": 8,
+        "w": 6,
         "x": 0,
-        "y": 26
+        "y": 33
       },
       "id": 2,
       "interval": "",
       "maxDataPoints": 500,
       "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
@@ -1032,7 +1696,8 @@
           "fields": "",
           "values": false
         },
-        "textMode": "auto"
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
       },
       "pluginVersion": "7.3.2",
       "targets": [
@@ -1098,7 +1763,7 @@
       "timeFrom": null,
       "timeShift": null,
       "title": "Right Closet pH",
-      "type": "stat"
+      "type": "gauge"
     },
     {
       "datasource": null,
@@ -1127,9 +1792,9 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 8,
-        "x": 8,
-        "y": 26
+        "w": 5,
+        "x": 6,
+        "y": 33
       },
       "id": 21,
       "interval": "",
@@ -1221,12 +1886,17 @@
     "list": []
   },
   "time": {
-    "from": "now-24h",
-    "to": "now"
+    "from": "2020-12-07T05:33:37.917Z",
+    "to": "2020-12-11T05:33:37.921Z"
   },
-  "timepicker": {},
+  "timepicker": {
+    "refresh_intervals": [
+      "5m",
+      "1m"
+    ]
+  },
   "timezone": "",
   "title": "Sensor Readings by Sensor",
   "uid": "GShSqMkgz",
-  "version": 8
+  "version": 19
 }
